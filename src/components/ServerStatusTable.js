@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faServer,
   faBuilding,
-  faNetworkWired,
   faSearch,
   faPlus,
   faSync,
@@ -15,11 +14,7 @@ import {
   faSignal,
   faClock,
   faCog,
-  faFilter,
-  faDownload,
   faSpinner,
-  faSitemap,
-  faShieldAlt,
   faDesktop,
 } from "@fortawesome/free-solid-svg-icons";
 import "./ServerStatusTable.css";
@@ -31,7 +26,7 @@ const ServerStatusTable = () => {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
   const [selectedType, setSelectedType] = useState("todos");
-  const [verifyingServers, setVerifyingServers] = useState(new Set());
+  const [verifyingServers, setVerifyingSs] = useState(new Set());
 
   const API_BASE_URL = "http://localhost:3001/api";
 

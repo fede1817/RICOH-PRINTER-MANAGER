@@ -5,8 +5,14 @@ import PrinterForm from "./components/PrinterForm";
 import InfoModal from "./components/InfoModal";
 import LoadingModal from "./components/LoadingModal";
 import Swal from "sweetalert2";
-import Ping from "./components/Ping";
-import { IoIosAdd } from "react-icons/io";
+import {
+  IoIosAdd,
+  IoIosPrint,
+  IoIosPulse,
+  IoIosMenu,
+  IoIosArrowDropleft,
+  IoIosArrowDropright,
+} from "react-icons/io";
 import ServerStatusTable from "./components/ServerStatusTable";
 
 function App() {
@@ -23,7 +29,9 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [infoModal, setInfoModal] = useState({ visible: false, data: null });
   const [showLoadingMessage, setShowLoadingMessage] = useState(false);
-  const [tablaActiva, setTablaActiva] = useState("principal");
+  const [tablaActiva, setTablaActiva] = useState("impresoras");
+  const [tipoImpresoraActiva, setTipoImpresoraActiva] = useState("principal");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const urls = "http://192.168.8.166:3001";
 
@@ -39,21 +47,16 @@ function App() {
       .catch((err) => console.error("Error al obtener datos:", err))
       .finally(() => {
         if (showMessage) {
-          setTimeout(() => setShowLoadingMessage(false), 500); // Oculta inmediatamente
+          setTimeout(() => setShowLoadingMessage(false), 500);
         }
       });
   };
 
   useEffect(() => {
-    // 🟢 Carga inicial
     fetchImpresoras();
-
-    // 🔁 Refresca automáticamente cada 5 minutos (300000 ms)
     const interval = setInterval(() => {
       fetchImpresoras();
     }, 3000);
-
-    // 🔴 Limpia el intervalo si el componente se desmonta
     return () => clearInterval(interval);
   }, []);
 
@@ -63,7 +66,6 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const result = await Swal.fire({
       title: "¿Estás seguro?",
       text: editingId
@@ -106,9 +108,7 @@ function App() {
         confirmButtonColor: "#3085d6",
       });
 
-      fetchImpresoras(true); // ⏳ Mostrar spinner
-
-      // Limpiar y cerrar modal
+      fetchImpresoras(true);
       setShowModal(false);
       setFormData({
         ip: "",
@@ -152,7 +152,6 @@ function App() {
           method: "DELETE",
         });
 
-        // ✅ Primero mostrar el mensaje de éxito
         await Swal.fire({
           title: "¡Eliminado!",
           text: "La impresora fue eliminada correctamente.",
@@ -162,7 +161,6 @@ function App() {
           confirmButtonColor: "#3085d6",
         });
 
-        // ✅ Después mostrar spinner y recargar datos
         fetchImpresoras(true);
       } catch (error) {
         console.error("Error al eliminar la impresora:", error);
@@ -242,25 +240,21 @@ Correo: ${pedidoData.correo}
 
     if (confirmacion.isConfirmed) {
       try {
-        // ✅ Copiar al portapapeles con fallback
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(textoParaCopiar);
         } else {
           const textArea = document.createElement("textarea");
           textArea.value = textoParaCopiar;
-          textArea.style.position = "fixed"; // evita scroll
+          textArea.style.position = "fixed";
           textArea.style.opacity = "0";
           document.body.appendChild(textArea);
           textArea.focus();
           textArea.select();
-
           const exito = document.execCommand("copy");
           document.body.removeChild(textArea);
-
           if (!exito) throw new Error("No se pudo copiar con fallback");
         }
 
-        // ✅ Enviar pedido al backend
         const response = await fetch(urls + "/api/pedido", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -298,78 +292,173 @@ Correo: ${pedidoData.correo}
     }
   };
 
+  // Opciones simplificadas del sidebar
+  const menuItems = [
+    {
+      id: "impresoras",
+      label: "Impresoras",
+      icon: <IoIosPrint className="text-2xl" />,
+    },
+    {
+      id: "servidores",
+      label: "Servidores",
+      icon: <IoIosPulse className="text-2xl" />,
+    },
+  ];
+
   return (
-    <div className="App dark-mode">
-      <h1>PrinterManager</h1>
+    <div className="flex h-screen bg-gray-900 text-white">
+      {/* Sidebar Minimalista */}
+      <div
+        className={`
+        bg-gray-800 border-r border-gray-700 transition-all duration-300 ease-in-out
+        ${sidebarCollapsed ? "w-20" : "w-64"}
+        flex flex-col
+      `}
+      >
+        {/* Header del Sidebar */}
+        <div
+          className={`flex items-center ${
+            sidebarCollapsed ? "justify-center p-3" : "justify-between p-4"
+          } border-b border-gray-700`}
+        >
+          {!sidebarCollapsed && (
+            <h1 className="text-xl font-bold text-white">PrinterManager</h1>
+          )}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            {sidebarCollapsed ? (
+              <IoIosArrowDropright className="text-xl" />
+            ) : (
+              <IoIosArrowDropleft className="text-xl" />
+            )}
+          </button>
+        </div>
 
-      <button className="add-btn" onClick={() => setShowModal(true)}>
-        <IoIosAdd />
-        Agregar impresora
-      </button>
-      <div className="tab-column-header">
-        <div
-          className={`tab-column ${
-            tablaActiva === "principal" ? "active" : ""
-          }`}
-          onClick={() => setTablaActiva("principal")}
-        >
-          Principales
-        </div>
-        <div
-          className={`tab-column ${tablaActiva === "backup" ? "active" : ""}`}
-          onClick={() => setTablaActiva("backup")}
-        >
-          Backup
-        </div>
-        <div
-          className={`tab-column ${
-            tablaActiva === "comercial" ? "active" : ""
-          }`}
-          onClick={() => setTablaActiva("comercial")}
-        >
-          Comercial
-        </div>
+        {/* Menú de Navegación Simplificado */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-3">
+            {menuItems.map((item) => (
+              <li key={item.id}>
+                <button
+                  onClick={() => setTablaActiva(item.id)}
+                  className={`
+                    w-full flex items-center rounded-lg transition-all duration-200
+                    ${
+                      tablaActiva === item.id
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                    }
+                    ${sidebarCollapsed ? "justify-center p-3" : "space-x-3 p-3"}
+                  `}
+                  title={sidebarCollapsed ? item.label : ""}
+                >
+                  {item.icon}
+                  {!sidebarCollapsed && (
+                    <span className="font-medium">{item.label}</span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
-      {showLoadingMessage && <LoadingModal />}
+      {/* Contenido Principal */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header Minimalista */}
+        <header className="bg-gray-800 border-b border-gray-700 p-4">
+          <div className="flex items-center justify-center relative">
+            {/* Botón menú móvil a la izquierda - posición absoluta */}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="absolute left-4 p-2 hover:bg-gray-700 rounded-lg transition-colors lg:hidden"
+            >
+              <IoIosMenu className="text-xl" />
+            </button>
 
-      <div>
-        {tablaActiva === "principal" && (
-          <PrinterTable
-            impresoras={impresoras}
-            tipo="principal"
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onInfo={(data) => setInfoModal({ visible: true, data })}
-            onCopy={handleCopyPedido}
-          />
-        )}
+            {/* Título centrado */}
+            <div className="text-center">
+              <h1 className="text-xl font-bold text-white">
+                {tablaActiva === "impresoras" && "Gestión de Impresoras"}
+                {tablaActiva === "servidores" && "Estado del Servidor"}
+              </h1>
+            </div>
+          </div>
+        </header>
 
-        {tablaActiva === "backup" && (
-          <PrinterTable
-            impresoras={impresoras}
-            tipo="backup"
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onInfo={(data) => setInfoModal({ visible: true, data })}
-            onCopy={handleCopyPedido}
-          />
-        )}
+        {/* Contenido - Menos espacio entre header y contenido */}
+        <main className="flex-1 overflow-auto bg-gray-900 pt-2">
+          {showLoadingMessage && <LoadingModal />}
 
-        {tablaActiva === "comercial" && (
-          <PrinterTable
-            impresoras={impresoras}
-            tipo="comercial"
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onInfo={(data) => setInfoModal({ visible: true, data })}
-            onCopy={handleCopyPedido}
-          />
-        )}
+          {/* Botón Agregar centrado - solo para impresoras */}
+          {tablaActiva === "impresoras" && (
+            <div className="flex justify-center mb-4">
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 whitespace-nowrap"
+              >
+                <IoIosAdd className="text-lg" />
+                <span>Agregar Impresora</span>
+              </button>
+            </div>
+          )}
+
+          {/* Tabs en columnas estilo original - SOLO para impresoras */}
+          {tablaActiva === "impresoras" && (
+            <div className="tab-column-header">
+              <div
+                className={`tab-column ${
+                  tipoImpresoraActiva === "principal" ? "active" : ""
+                }`}
+                onClick={() => setTipoImpresoraActiva("principal")}
+              >
+                Principales
+              </div>
+              <div
+                className={`tab-column ${
+                  tipoImpresoraActiva === "backup" ? "active" : ""
+                }`}
+                onClick={() => setTipoImpresoraActiva("backup")}
+              >
+                Backup
+              </div>
+              <div
+                className={`tab-column ${
+                  tipoImpresoraActiva === "comercial" ? "active" : ""
+                }`}
+                onClick={() => setTipoImpresoraActiva("comercial")}
+              >
+                Comercial
+              </div>
+            </div>
+          )}
+
+          {/* Contenido Principal */}
+          <div>
+            {tablaActiva === "impresoras" && (
+              <PrinterTable
+                impresoras={impresoras}
+                tipo={tipoImpresoraActiva}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onInfo={(data) => setInfoModal({ visible: true, data })}
+                onCopy={handleCopyPedido}
+              />
+            )}
+
+            {tablaActiva === "servidores" && (
+              <div id="server-status">
+                <ServerStatusTable />
+              </div>
+            )}
+          </div>
+        </main>
       </div>
 
-      <ServerStatusTable />
-
+      {/* Modales */}
       {showModal && (
         <PrinterForm
           formData={formData}
