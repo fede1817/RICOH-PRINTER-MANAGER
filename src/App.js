@@ -12,8 +12,10 @@ import {
   IoIosMenu,
   IoIosArrowDropleft,
   IoIosArrowDropright,
+  IoIosCart,
 } from "react-icons/io";
 import ServerStatusTable from "./components/ServerStatusTable";
+import PedidosSection from "./components/PedidosSection";
 
 function App() {
   const [impresoras, setImpresoras] = useState([]);
@@ -304,6 +306,11 @@ Correo: ${pedidoData.correo}
       label: "Servidores",
       icon: <IoIosPulse className="text-2xl" />,
     },
+    {
+      id: "pedidos",
+      label: "Pedidos",
+      icon: <IoIosCart className="text-2xl" />,
+    },
   ];
 
   return (
@@ -384,6 +391,7 @@ Correo: ${pedidoData.correo}
               <h1 className="text-xl font-bold text-white">
                 {tablaActiva === "impresoras" && "Gestión de Impresoras"}
                 {tablaActiva === "servidores" && "Estado del Servidor"}
+                {tablaActiva === "pedidos" && "Lista de Pedidos"}
               </h1>
             </div>
           </div>
@@ -455,6 +463,7 @@ Correo: ${pedidoData.correo}
               </div>
             )}
           </div>
+          <div>{tablaActiva === "pedidos" && <PedidosSection />}</div>
         </main>
       </div>
 

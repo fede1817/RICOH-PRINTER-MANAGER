@@ -781,3 +781,137 @@ console.log("🕐 Actualización automática programada cada 5 minutos");
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🟢 Servidor activo en http://localhost:${PORT}`);
 });
+
+// En tu servidor, para PostgreSQL:
+app.post("/api/pedidos", async (req, res) => {
+  try {
+    const { solicitante, sucursal, modelo_impresora, tipo_toner, cantidad } =
+      req.body;
+
+    const query = `
+      INSERT INTO pedidos (solicitante, sucursal, modelo_impresora, tipo_toner, cantidad)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `;
+
+    const result = await pool.query(query, [
+      solicitante,
+      sucursal,
+      modelo_impresora,
+      tipo_toner,
+      cantidad,
+    ]);
+
+    res.json({ success: true, id: result.rows[0].id });
+  } catch (error) {
+    console.error("Error al crear pedido:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Error interno del servidor" });
+  }
+});
+
+// GET /api/pedidos - Obtener todos los pedidos
+app.get("/api/pedidos", async (req, res) => {
+  try {
+    // Para PostgreSQL
+    const query = `
+      SELECT * FROM pedidos 
+      ORDER BY fecha_pedido DESC
+    `;
+
+    const result = await pool.query(query);
+
+    res.json({
+      success: true,
+      pedidos: result.rows,
+    });
+  } catch (error) {
+    console.error("Error al obtener pedidos:", error);
+    res.status(500).json({
+      success: false,
+      error: "Error interno del servidor",
+    });
+  }
+});
+
+// Procesar pedido (cambiar estado a 'aprobado')
+app.put("/api/pedidos/:id/procesar", async (req, res) => {
+  const pedidoId = req.params.id;
+
+  try {
+    // Verificar si el pedido existe
+    const pedidoCheck = await pool.query(
+      "SELECT * FROM pedidos WHERE id = $1",
+      [pedidoId]
+    );
+
+    if (pedidoCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+
+    // Actualizar estado a 'aprobado'
+    await pool.query("UPDATE pedidos SET estado = $1 WHERE id = $2", [
+      "aprobado",
+      pedidoId,
+    ]);
+
+    res.json({ message: "Pedido procesado exitosamente" });
+  } catch (err) {
+    console.error("Error al procesar pedido:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// Cancelar pedido (cambiar estado a 'rechazado')
+app.put("/api/pedidos/:id/pendiente", async (req, res) => {
+  const pedidoId = req.params.id;
+
+  try {
+    // Verificar si el pedido existe
+    const pedidoCheck = await pool.query(
+      "SELECT * FROM pedidos WHERE id = $1",
+      [pedidoId]
+    );
+
+    if (pedidoCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+
+    // Actualizar estado a 'pendiente'
+    await pool.query("UPDATE pedidos SET estado = $1 WHERE id = $2", [
+      "pendiente",
+      pedidoId,
+    ]);
+
+    res.json({ message: "Pedido actualizado a pendiente exitosamente" });
+  } catch (err) {
+    console.error("Error al actualizar pedido:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// Eliminar pedido
+app.delete("/api/pedidos/:id", async (req, res) => {
+  const pedidoId = req.params.id;
+
+  try {
+    // Verificar si el pedido existe
+    const pedidoCheck = await pool.query(
+      "SELECT * FROM pedidos WHERE id = $1",
+      [pedidoId]
+    );
+
+    if (pedidoCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+
+    // Eliminar pedido
+    await pool.query("DELETE FROM pedidos WHERE id = $1", [pedidoId]);
+
+    res.json({ message: "Pedido eliminado exitosamente" });
+  } catch (err) {
+    console.error("Error al eliminar pedido:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
