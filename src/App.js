@@ -570,7 +570,9 @@ Correo: ${pedidoData.correo}
               </div>
             )}
           </div>
-          <div>{tablaActiva === "pedidos" && <PedidosSection />}</div>
+          <div>
+            {tablaActiva === "pedidos" && <PedidosSection urls={urls} />}
+          </div>
         </main>
       </div>
 

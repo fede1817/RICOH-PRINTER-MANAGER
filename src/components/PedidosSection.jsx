@@ -15,7 +15,7 @@ import {
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
 
-const PedidosSection = () => {
+const PedidosSection = ({urls}) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     solicitante: "",
@@ -27,6 +27,13 @@ const PedidosSection = () => {
   const [pedidos, setPedidos] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Verificar si el usuario es administrador al cargar el componente
+  useEffect(() => {
+    const adminStatus = localStorage.getItem('isAdmin');
+    setIsAdmin(adminStatus === 'true');
+  }, []);
 
   const steps = [
     {
@@ -129,7 +136,7 @@ const PedidosSection = () => {
   const fetchPedidos = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://192.168.8.166:3001/api/pedidos');
+      const response = await fetch(`${urls}/api/pedidos`);
       if (response.ok) {
         const data = await response.json();
         setPedidos(data.pedidos || []);
@@ -195,7 +202,7 @@ const PedidosSection = () => {
         title: 'Campo requerido',
         text: 'Por favor completa todos los campos antes de enviar el pedido',
         background: "#2c2c2c",
-      color: "#fff",
+        color: "#fff",
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Entendido'
       });
@@ -203,7 +210,7 @@ const PedidosSection = () => {
     }
 
     try {
-      const response = await fetch('http://192.168.8.166:3001/api/pedidos', {
+      const response = await fetch(`${urls}/api/pedidos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -217,7 +224,7 @@ const PedidosSection = () => {
           title: '¡Pedido enviado!',
           text: 'Tu pedido ha sido registrado correctamente',
           background: "#2c2c2c",
-      color: "#fff",
+          color: "#fff",
           confirmButtonColor: '#10B981',
           confirmButtonText: 'Aceptar'
         });
@@ -240,7 +247,7 @@ const PedidosSection = () => {
           title: 'Error al enviar',
           text: errorData.message || 'Hubo un problema al enviar el pedido',
           background: "#2c2c2c",
-      color: "#fff",
+          color: "#fff",
           confirmButtonColor: '#EF4444',
           confirmButtonText: 'Entendido'
         });
@@ -251,6 +258,8 @@ const PedidosSection = () => {
         icon: 'error',
         title: 'Error de conexión',
         text: 'No se pudo conectar con el servidor',
+         background: "#2c2c2c",
+          color: "#fff",
         confirmButtonColor: '#EF4444',
         confirmButtonText: 'Entendido'
       });
@@ -260,7 +269,7 @@ const PedidosSection = () => {
   // Función para procesar pedido
   const procesarPedido = async (pedidoId) => {
     try {
-      const response = await fetch(`http://192.168.8.166:3001/api/pedidos/${pedidoId}/procesar`, {
+      const response = await fetch(`${urls}/api/pedidos/${pedidoId}/procesar`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -273,7 +282,7 @@ const PedidosSection = () => {
           title: 'Pedido procesado',
           text: 'El pedido ha sido marcado como procesado',
           background: "#2c2c2c",
-      color: "#fff",
+          color: "#fff",
           confirmButtonColor: '#10B981',
           confirmButtonText: 'Aceptar'
         });
@@ -288,7 +297,7 @@ const PedidosSection = () => {
         title: 'Error',
         text: 'No se pudo procesar el pedido',
         background: "#2c2c2c",
-      color: "#fff",
+        color: "#fff",
         confirmButtonColor: '#EF4444',
         confirmButtonText: 'Entendido'
       });
@@ -298,7 +307,7 @@ const PedidosSection = () => {
   // Función para volver a poner pendiente
   const volverAPendiente = async (pedidoId) => {
     try {
-      const response = await fetch(`http://192.168.8.166:3001/api/pedidos/${pedidoId}/pendiente`, {
+      const response = await fetch(`${urls}/api/pedidos/${pedidoId}/pendiente`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -311,7 +320,7 @@ const PedidosSection = () => {
           title: 'Pedido actualizado',
           text: 'El pedido ha sido marcado como pendiente',
           background: "#2c2c2c",
-      color: "#fff",
+          color: "#fff",
           confirmButtonColor: '#10B981',
           confirmButtonText: 'Aceptar'
         });
@@ -326,7 +335,7 @@ const PedidosSection = () => {
         title: 'Error',
         text: 'No se pudo actualizar el pedido',
         background: "#2c2c2c",
-      color: "#fff",
+        color: "#fff",
         confirmButtonColor: '#EF4444',
         confirmButtonText: 'Entendido'
       });
@@ -350,7 +359,7 @@ const PedidosSection = () => {
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch(`http://192.168.8.166:3001/api/pedidos/${pedidoId}`, {
+        const response = await fetch(`${urls}/api/pedidos/${pedidoId}`, {
           method: 'DELETE',
         });
 
@@ -360,7 +369,7 @@ const PedidosSection = () => {
             title: 'Pedido eliminado',
             text: 'El pedido ha sido eliminado correctamente',
             background: "#2c2c2c",
-      color: "#fff",
+            color: "#fff",
             confirmButtonColor: '#10B981',
             confirmButtonText: 'Aceptar'
           });
@@ -375,7 +384,7 @@ const PedidosSection = () => {
           title: 'Error',
           text: 'No se pudo eliminar el pedido',
           background: "#2c2c2c",
-      color: "#fff",
+          color: "#fff",
           confirmButtonColor: '#EF4444',
           confirmButtonText: 'Entendido'
         });
@@ -393,7 +402,7 @@ const PedidosSection = () => {
         title: 'No hay datos',
         text: 'No hay pedidos pendientes para exportar',
         background: "#2c2c2c",
-      color: "#fff",
+        color: "#fff",
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Entendido'
       });
@@ -730,7 +739,8 @@ const PedidosSection = () => {
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex space-x-2">
-                        {pedido.estado === 'pendiente' && (
+                        {/* Solo mostrar botón Procesar si es administrador */}
+                        {isAdmin && pedido.estado === 'pendiente' && (
                           <button
                             onClick={() => procesarPedido(pedido.id)}
                             className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition-colors"
@@ -741,7 +751,8 @@ const PedidosSection = () => {
                           </button>
                         )}
                         
-                        {pedido.estado === 'aprobado' && (
+                        {/* Solo mostrar botón Volver a Pendiente si es administrador */}
+                        {isAdmin && pedido.estado === 'aprobado' && (
                           <button
                             onClick={() => volverAPendiente(pedido.id)}
                             className="flex items-center space-x-1 bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs transition-colors"
@@ -752,6 +763,7 @@ const PedidosSection = () => {
                           </button>
                         )}
                         
+                        {/* Botón Eliminar visible para todos los usuarios */}
                         <button
                           onClick={() => eliminarPedido(pedido.id)}
                           className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition-colors"
