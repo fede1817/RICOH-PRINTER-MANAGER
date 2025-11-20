@@ -179,6 +179,8 @@ const PedidosSection = ({urls}) => {
         title: 'Campo requerido',
         text: 'Por favor completa todos los campos antes de continuar',
         confirmButtonColor: '#3085d6',
+         background: "#2c2c2c",
+          color: "#fff",
         confirmButtonText: 'Entendido'
       });
       return;

@@ -115,7 +115,7 @@ const Login = ({ onLogin }) => {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">PrinterManager</h1>
-          <p className="text-gray-400">Inicia sesión para continuar</p>
+          <p className="text-gray-400">Inicia sesión con tus credenciales de Mbusiness</p>
         </div>
 
         {/* Formulario */}
@@ -135,7 +135,7 @@ const Login = ({ onLogin }) => {
                 value={credentials.email}
                 onChange={handleInputChange}
                 className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="tu@correo.com"
+                placeholder="tu@surcomercial.com.py"
                 required
               />
             </div>
