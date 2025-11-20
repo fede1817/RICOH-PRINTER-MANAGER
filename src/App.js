@@ -4,6 +4,7 @@ import PrinterTable from "./components/PrinterTable";
 import PrinterForm from "./components/PrinterForm";
 import InfoModal from "./components/InfoModal";
 import LoadingModal from "./components/LoadingModal";
+import Login from "./components/Login";
 import Swal from "sweetalert2";
 import {
   IoIosAdd,
@@ -13,6 +14,8 @@ import {
   IoIosArrowDropleft,
   IoIosArrowDropright,
   IoIosCart,
+  IoIosLogOut,
+  IoIosPerson,
 } from "react-icons/io";
 import ServerStatusTable from "./components/ServerStatusTable";
 import PedidosSection from "./components/PedidosSection";
@@ -35,10 +38,30 @@ function App() {
   const [tipoImpresoraActiva, setTipoImpresoraActiva] = useState("principal");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Estados de autenticación
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState(null);
+
   const urls = "http://192.168.8.166:3001";
+
+  // Verificar autenticación al cargar
+  useEffect(() => {
+    const authStatus = localStorage.getItem("isAuthenticated");
+    const adminStatus = localStorage.getItem("isAdmin");
+    const userData = localStorage.getItem("user");
+
+    if (authStatus === "true") {
+      setIsAuthenticated(true);
+      setIsAdmin(adminStatus === "true");
+      setUser(userData ? JSON.parse(userData) : null);
+    }
+  }, []);
 
   // ✅ Función para cargar impresoras
   const fetchImpresoras = (showMessage = false) => {
+    if (!isAdmin) return; // Solo cargar si es admin
+
     if (showMessage) {
       setShowLoadingMessage(true);
     }
@@ -55,12 +78,52 @@ function App() {
   };
 
   useEffect(() => {
-    fetchImpresoras();
-    const interval = setInterval(() => {
+    if (isAuthenticated && isAdmin) {
       fetchImpresoras();
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+      const interval = setInterval(() => {
+        fetchImpresoras();
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, isAdmin]);
+
+  // Función de login
+  const handleLogin = (userData, adminStatus) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+    setIsAdmin(adminStatus);
+
+    // Si no es admin, mostrar solo pedidos
+    if (!adminStatus) {
+      setTablaActiva("pedidos");
+    }
+  };
+
+  // Función de logout
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "¿Cerrar sesión?",
+      text: "¿Estás seguro de que quieres salir?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, salir",
+      cancelButtonText: "Cancelar",
+      background: "#2c2c2c",
+      color: "#fff",
+    });
+
+    if (result.isConfirmed) {
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("isAdmin");
+      localStorage.removeItem("user");
+      setIsAuthenticated(false);
+      setIsAdmin(false);
+      setUser(null);
+      setTablaActiva("impresoras");
+    }
+  };
 
   const handleInputChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -294,24 +357,37 @@ Correo: ${pedidoData.correo}
     }
   };
 
-  // Opciones simplificadas del sidebar
-  const menuItems = [
-    {
-      id: "impresoras",
-      label: "Impresoras",
-      icon: <IoIosPrint className="text-2xl" />,
-    },
-    {
-      id: "servidores",
-      label: "Servidores",
-      icon: <IoIosPulse className="text-2xl" />,
-    },
-    {
-      id: "pedidos",
-      label: "Pedidos",
-      icon: <IoIosCart className="text-2xl" />,
-    },
-  ];
+  // Opciones del sidebar - varían según el rol
+  const menuItems = isAdmin
+    ? [
+        {
+          id: "impresoras",
+          label: "Impresoras",
+          icon: <IoIosPrint className="text-2xl" />,
+        },
+        {
+          id: "servidores",
+          label: "Servidores",
+          icon: <IoIosPulse className="text-2xl" />,
+        },
+        {
+          id: "pedidos",
+          label: "Pedidos",
+          icon: <IoIosCart className="text-2xl" />,
+        },
+      ]
+    : [
+        {
+          id: "pedidos",
+          label: "Pedidos",
+          icon: <IoIosCart className="text-2xl" />,
+        },
+      ];
+
+  // Mostrar login si no está autenticado
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -371,6 +447,32 @@ Correo: ${pedidoData.correo}
             ))}
           </ul>
         </nav>
+
+        {/* Información del usuario y logout */}
+        {!sidebarCollapsed && (
+          <div className="p-4 border-t border-gray-700">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <IoIosPerson className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {user?.nombrepersona || "Usuario"}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  {isAdmin ? "Administrador" : "Usuario"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center space-x-2 p-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-colors"
+            >
+              <IoIosLogOut className="text-lg" />
+              <span className="text-sm">Cerrar Sesión</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Contenido Principal */}
@@ -393,6 +495,11 @@ Correo: ${pedidoData.correo}
                 {tablaActiva === "servidores" && "Estado del Servidor"}
                 {tablaActiva === "pedidos" && "Lista de Pedidos"}
               </h1>
+              {!isAdmin && (
+                <p className="text-sm text-gray-400 mt-1">
+                  Acceso limitado - Solo pedidos
+                </p>
+              )}
             </div>
           </div>
         </header>
@@ -401,8 +508,8 @@ Correo: ${pedidoData.correo}
         <main className="flex-1 overflow-auto bg-gray-900 pt-2">
           {showLoadingMessage && <LoadingModal />}
 
-          {/* Botón Agregar centrado - solo para impresoras */}
-          {tablaActiva === "impresoras" && (
+          {/* Botón Agregar centrado - solo para impresoras y solo para admin */}
+          {tablaActiva === "impresoras" && isAdmin && (
             <div className="flex justify-center mb-4">
               <button
                 onClick={() => setShowModal(true)}
@@ -414,8 +521,8 @@ Correo: ${pedidoData.correo}
             </div>
           )}
 
-          {/* Tabs en columnas estilo original - SOLO para impresoras */}
-          {tablaActiva === "impresoras" && (
+          {/* Tabs en columnas estilo original - SOLO para impresoras y solo para admin */}
+          {tablaActiva === "impresoras" && isAdmin && (
             <div className="tab-column-header">
               <div
                 className={`tab-column ${
@@ -446,7 +553,7 @@ Correo: ${pedidoData.correo}
 
           {/* Contenido Principal */}
           <div>
-            {tablaActiva === "impresoras" && (
+            {tablaActiva === "impresoras" && isAdmin && (
               <PrinterTable
                 impresoras={impresoras}
                 tipo={tipoImpresoraActiva}
@@ -457,7 +564,7 @@ Correo: ${pedidoData.correo}
               />
             )}
 
-            {tablaActiva === "servidores" && (
+            {tablaActiva === "servidores" && isAdmin && (
               <div id="server-status">
                 <ServerStatusTable />
               </div>
