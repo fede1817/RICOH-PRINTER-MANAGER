@@ -197,7 +197,7 @@ const PedidosSection = ({urls}) => {
       "HP LaserJet Pro M203"
     ],
     "PJC": [
-      "HP LaserJet Pl 102w",
+      "HP LaserJet P1102w",
       "HP DESKJET 2130",
       "HP DESKJET 2700",
       "HP LaserJet Pro m127FN"
