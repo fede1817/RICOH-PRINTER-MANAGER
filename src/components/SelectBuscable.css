@@ -1,0 +1,30 @@
+/* Estilos para el select buscable */
+.react-select-container {
+  width: 100%;
+}
+
+.react-select__control {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  min-height: 38px;
+  font-size: 14px;
+}
+
+.react-select__control--is-focused {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.react-select__menu {
+  z-index: 9999;
+  font-size: 14px;
+}
+
+.react-select__option--is-focused {
+  background-color: #eff6ff;
+}
+
+.react-select__option--is-selected {
+  background-color: #3b82f6;
+  color: white;
+}

@@ -1,0 +1,1055 @@
+/* ALTERNATIVA MÁS MINIMALISTA */
+.home-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #1e293b;
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid #334155;
+  position: relative;
+}
+
+.home-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  border-radius: 0 0 2px 2px;
+}
+
+.home-header h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #f1f5f9;
+}
+
+.home-header p {
+  margin: 0;
+  font-size: 1rem;
+  color: #cbd5e1;
+  opacity: 0.9;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  gap: 10px;
+}
+
+/* 🔥 ESTILOS UNIFICADOS PARA TODOS LOS BOTONES */
+.action-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset;
+  color: white;
+  white-space: nowrap;
+}
+
+/* Botón de actualizar - COLOR AZUL */
+.reload-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.reload-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 15px rgba(59, 130, 246, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+.reload-button:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+
+/* Botón de buscar por link - COLOR VERDE */
+.search-link-button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.search-link-button:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 15px rgba(16, 185, 129, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+/* Botón de buscar por fechas - COLOR NARANJA/MORADO */
+.search-dates-button {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  min-width: 160px;
+}
+
+.search-dates-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 15px rgba(139, 92, 246, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+.search-dates-button:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+
+/* El resto del CSS se mantiene igual... */
+.search-container {
+  margin-bottom: 30px;
+}
+
+.search-box {
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto 15px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 18px;
+  font-size: 14px;
+  border: 2px solid #277bcf;
+  border-radius: 50px;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.search-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+}
+
+.search-spinner {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+.results-info {
+  text-align: center;
+  margin-bottom: 15px;
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.search-term-info {
+  font-weight: 600;
+  color: #495057;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+  text-align: center;
+  margin: 8px 0;
+}
+
+/* Tabla modo oscuro */
+.results-container {
+  background: #1a1d23;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  border: 1px solid #2d3748;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.censos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #1a1d23;
+}
+
+.censos-table th {
+  background-color: #2d3748;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #e2e8f0;
+  border-bottom: 2px solid #4a5568;
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.censos-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #2d3748;
+  vertical-align: top;
+  color: #cbd5e0;
+}
+
+.censos-table tbody tr {
+  background-color: #1a1d23;
+  transition: all 0.2s ease;
+}
+
+.censos-table tbody tr:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Columnas específicas - Modo oscuro */
+.codigo-censo {
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.sucursal {
+  white-space: nowrap;
+  color: #e2e8f0;
+}
+
+.vendedor {
+  white-space: nowrap;
+  color: #e2e8f0;
+}
+
+.razon-social {
+  min-width: 200px;
+}
+
+.razon-social-content strong {
+  color: #ffffff;
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.cliente-codigo {
+  font-size: 11px;
+  color: #a0aec0;
+  background-color: #2d3748;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  border: 1px solid #4a5568;
+}
+
+.ruc {
+  white-space: nowrap;
+  font-family: 'Courier New', monospace;
+  color: #e2e8f0;
+}
+
+.direccion {
+  max-width: 250px;
+  color: #a0aec0;
+  line-height: 1.4;
+  font-size: 12px;
+}
+
+.hora {
+  white-space: nowrap;
+  color: #a0aec0;
+  font-size: 12px;
+}
+
+.estado {
+  white-space: nowrap;
+}
+
+.estado-badge {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 100px;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+/* Estados modernos para modo oscuro */
+.estado-temp {
+  background: rgba(220, 38, 38, 0.15);
+  color: #fca5a5;
+  border-color: rgba(220, 38, 38, 0.3);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+}
+
+.estado-sync {
+  background: rgba(5, 150, 105, 0.15);
+  color: #34d399;
+  border-color: rgba(5, 150, 105, 0.3);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);
+}
+
+.estado-pendiente {
+  background: rgba(217, 119, 6, 0.15);
+  color: #fbbf24;
+  border-color: rgba(217, 119, 6, 0.3);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.1);
+}
+
+.estado-desconocido {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border-color: rgba(107, 114, 128, 0.3);
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.1);
+}
+
+.acciones {
+  white-space: nowrap;
+  text-align: center;
+}
+
+.select-button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 90px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  white-space: nowrap;
+}
+
+.select-button:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.25) 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Estados de la tabla */
+.no-results {
+  text-align: center;
+  padding: 50px;
+  color: #a0aec0;
+  font-size: 14px;
+  background-color: #2d3748;
+  border-radius: 8px;
+  border: 2px dashed #4a5568;
+  margin-top: 20px;
+}
+
+.loading-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #a0aec0;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #4a5568;
+  border-top: 2px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Instrucciones en modo oscuro */
+.home-instructions {
+  background-color: #2d3748;
+  padding: 20px;
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+  color: #e2e8f0;
+}
+
+.home-instructions h3 {
+  margin-top: 0;
+  color: #ffffff;
+  font-size: 1.1em;
+}
+
+.home-instructions ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.home-instructions li {
+  margin-bottom: 6px;
+  color: #cbd5e0;
+  font-size: 13px;
+}
+
+.home-instructions .estado-badge {
+  margin: 0 3px;
+}
+
+/* Scrollbar personalizado para modo oscuro */
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #2d3748;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #718096;
+}
+
+/* 🔥 ESTILOS PARA LOS FILTROS DE FECHA */
+.filters-section {
+  background: #2d3a4e;
+  padding: 20px;
+  margin: 20px auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 1200px;
+}
+
+.date-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 150px;
+}
+
+.date-input-group label {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.date-input {
+  padding: 10px 12px;
+  border: 2px solid #4b5563;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+  background: #374151;
+  color: white;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+/* 🔥 SECCIÓN DE ACCIONES DE BÚSQUEDA (DEBAJO DE LOS FILTROS DE FECHA) */
+.search-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #4a5568;
+}
+
+/* 🔥 BOTÓN DE BUSCAR FECHAS EN LA SECCIÓN DE FILTROS */
+.filters-section .search-dates-button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.filters-section .search-dates-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  transform: translateY(-1px);
+}
+
+.filters-section .search-dates-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 🔥 BOTÓN DE BUSCAR POR LINK EN LA SECCIÓN DE FILTROS */
+.filters-section .search-link-button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.filters-section .search-link-button:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+}
+
+/* Sección de búsqueda manual */
+.manual-search-section {
+  background: #2d3748;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid #4a5568;
+  animation: slideDown 0.3s ease;
+}
+
+.manual-search-section .search-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.manual-search-section .search-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.manual-search-section .close-button {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.25rem;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.manual-search-section .close-button:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+}
+
+.manual-search-section .search-subtitle {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: #a0aec0;
+  text-align: center;
+}
+
+.manual-search-section .search-box {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.manual-search-section .search-box input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+  width: 400px;
+  max-width: 100%;
+  font-size: 0.9rem;
+  background: #374151;
+  color: #ffffff;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.manual-search-section .search-box input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.manual-search-section .search-box input::placeholder {
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.manual-search-section .search-box button {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.manual-search-section .search-box button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Iconos generales */
+.fas {
+  margin-right: 6px;
+}
+
+/* Icono de búsqueda en el input */
+.search-box {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  z-index: 1;
+}
+
+/* Estados con icons */
+.estado-badge .fas {
+  margin-right: 4px;
+}
+
+.estado-sync .fas {
+  color: #059669;
+}
+
+.estado-temp .fas {
+  color: #d97706;
+}
+
+.estado-pendiente .fas {
+  color: #dc2626;
+}
+
+.estado-desconocido .fas {
+  color: #6b7280;
+}
+
+/* Resultados info */
+.results-info .fas {
+  margin-right: 8px;
+  color: #3b82f6;
+}
+
+/* Error message */
+.error-message .fas {
+  margin-right: 8px;
+}
+
+/* No results */
+.no-results .fas {
+  margin-right: 10px;
+  font-size: 1.2em;
+}
+
+/* Botón validar en tabla */
+.select-button .fas {
+  margin-right: 6px;
+}
+
+/* Estilos para el ordenamiento con FontAwesome */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+.th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sort-icon {
+  font-size: 12px;
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+
+.sortable:hover .sort-icon {
+  color: #495057;
+}
+
+/* Colores para los íconos activos */
+.sortable .fa-sort-up,
+.sortable .fa-sort-down {
+  color: #007bff;
+}
+
+.sort-info {
+  margin-left: 10px;
+  font-style: italic;
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* Asegurar que la tabla tenga suficiente padding */
+.censos-table th {
+  padding: 12px 8px;
+}
+
+/* 🔥 ESTILOS PARA PAGINACIÓN */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  margin: 10px 0;
+  border-bottom: 1px solid #4a5568;
+}
+
+.pagination-controls.top {
+  border-bottom: 1px solid #4a5568;
+  border-top: 1px solid #4a5568;
+  padding-top: 0;
+}
+
+.pagination-controls.bottom {
+  border-top: 1px solid #4a5568;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.pagination-info {
+  color: #a0aec0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.pagination-items-per-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-items-per-page label {
+  font-size: 14px;
+  color: #a0aec0;
+  font-weight: 500;
+}
+
+.items-per-page-select {
+  padding: 6px 10px;
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  background: #374151;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.items-per-page-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #4a5568;
+  background: #374151;
+  color: #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #4a5568;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.pagination-btn:disabled {
+  background: #2d3748;
+  color: #6b7280;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pagination-active {
+  background: #3b82f6 !important;
+  color: white !important;
+  border-color: #3b82f6 !important;
+}
+
+.pagination-prev,
+.pagination-next {
+  font-size: 12px;
+}
+
+.pagination-ellipsis {
+  padding: 0 8px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .home-header {
+    padding: 15px;
+  }
+  
+  .home-header h1 {
+    font-size: 1.5em;
+  }
+  
+  .home-header p {
+    font-size: 0.9em;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .header-action-btn {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .censos-table {
+    font-size: 11px;
+  }
+  
+  .censos-table th,
+  .censos-table td {
+    padding: 8px 10px;
+  }
+  
+  .search-input {
+    font-size: 13px;
+    padding: 5px 14px;
+  }
+  
+  .home-instructions {
+    padding: 15px;
+  }
+  
+  .home-instructions li {
+    font-size: 12px;
+  }
+
+  /* 🔥 RESPONSIVE PARA FILTROS DE FECHA */
+  .date-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .date-input-group {
+    width: 100%;
+  }
+  
+  .search-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .filters-section .search-dates-button,
+  .filters-section .search-link-button {
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .manual-search-section .search-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .manual-search-section .search-box input {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Paginación responsive */
+  .pagination-controls {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .pagination-buttons {
+    order: 1;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .pagination-info {
+    order: 2;
+    text-align: center;
+  }
+
+  .pagination-items-per-page {
+    order: 3;
+    justify-content: center;
+  }
+
+  .pagination-btn {
+    min-width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  /* Ocultar algunos icons en móvil para ahorrar espacio */
+  .censos-table th .fas,
+  .censos-table td .fas {
+    display: none;
+  }
+
+  .th-content {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .sort-icon {
+    font-size: 10px;
+  }
+  
+  .sort-info {
+    display: block;
+    margin-left: 0;
+    margin-top: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-page {
+    padding: 10px;
+  }
+  
+  .home-header {
+    margin-bottom: 20px;
+    padding: 12px;
+  }
+  
+  .home-header h1 {
+    font-size: 1.3em;
+  }
+  
+  .search-container {
+    margin-bottom: 20px;
+  }
+
+  .pagination-buttons {
+    gap: 3px;
+  }
+  
+  .pagination-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+  
+  .pagination-ellipsis {
+    padding: 0 4px;
+  }
+}

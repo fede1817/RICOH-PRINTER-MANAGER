@@ -1,0 +1,459 @@
+/* ===== MAPA MODERNO ===== */
+.mapa-moderno {
+  margin: 25px 0;
+  background: #1a1d23;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  border: 1px solid #2d3748;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+/* Header del Mapa */
+.mapa-header-moderno {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border-bottom: 1px solid #374151;
+  position: relative;
+}
+
+.mapa-header-moderno::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  border-radius: 0 0 2px 2px;
+}
+
+.mapa-header-moderno h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mapa-header-moderno h3 i {
+  color: #60a5fa;
+  font-size: 1.1em;
+}
+
+/* Controles del Mapa */
+.mapa-controls-moderno {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mapa-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Botones del Mapa */
+.btn-mapa {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  min-width: auto;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.btn-copiar {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.btn-copiar:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.25) 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-externo {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
+  color: #34d399;
+  border-color: rgba(5, 150, 105, 0.3);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);
+  padding: 10px 14px;
+}
+
+.btn-externo:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.25) 100%);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+  transform: translateY(-1px);
+  color: #34d399;
+  text-decoration: none;
+}
+
+/* Display de Coordenadas */
+.coordenadas-display-moderno {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.coord-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.coord-label {
+  color: #94a3b8;
+  font-weight: 600;
+  min-width: 30px;
+}
+
+.coord-value {
+  color: #e2e8f0;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Contenedor del Mapa */
+.mapa-contenedor-moderno {
+  width: 100%;
+  height: 450px;
+  background: #0f172a;
+  position: relative;
+  overflow: hidden;
+}
+
+.mapa-iframe {
+  width: 100%;
+  height: 100%;
+  background: #0f172a;
+}
+
+/* Estados de Carga y Error */
+.mapa-cargando-moderno {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.95);
+  color: #cbd5e1;
+  gap: 16px;
+}
+
+.spinner-moderno {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(100, 116, 139, 0.3);
+  border-left: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.mapa-error-inline {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  padding: 20px 24px;
+  border-radius: 8px;
+  text-align: center;
+  color: #fca5a5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
+}
+
+.mapa-error-inline i {
+  font-size: 1.2em;
+}
+
+.mapa-error-inline p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Footer del Mapa */
+.mapa-footer-moderno {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #1e293b;
+  border-top: 1px solid #374151;
+  gap: 20px;
+}
+
+.info-cliente {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.info-item i {
+  color: #60a5fa;
+  margin-top: 2px;
+  font-size: 13px;
+  min-width: 16px;
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-content strong {
+  color: #f1f5f9;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.info-content span {
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.mapa-attribution-moderno {
+  text-align: right;
+}
+
+.mapa-attribution-moderno small {
+  color: #64748b;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.attribution-link {
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.attribution-link:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* Estados de Error Completo */
+.mapa-error-moderno {
+  padding: 60px 40px;
+  text-align: center;
+  background: #1e293b;
+  border-radius: 0 0 12px 12px;
+}
+
+.error-content {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.error-content i {
+  font-size: 3rem;
+  color: #f59e0b;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.error-content p {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.text-muted {
+  color: #94a3b8 !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 1.5;
+}
+
+/* Animaciones */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .mapa-header-moderno {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .mapa-controls-moderno {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 768px) {
+  .mapa-moderno {
+    margin: 20px 0;
+    border-radius: 10px;
+  }
+  
+  .mapa-header-moderno {
+    padding: 16px 20px;
+  }
+  
+  .mapa-controls-moderno {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .mapa-actions {
+    justify-content: center;
+  }
+  
+  .coordenadas-display-moderno {
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 12px;
+  }
+  
+  .coord-item {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+  
+  .mapa-contenedor-moderno {
+    height: 350px;
+  }
+  
+  .mapa-footer-moderno {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px 20px;
+  }
+  
+  .mapa-attribution-moderno {
+    text-align: left;
+    width: 100%;
+  }
+  
+  .btn-mapa {
+    padding: 12px 16px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mapa-header-moderno {
+    padding: 14px 16px;
+  }
+  
+  .mapa-header-moderno h3 {
+    font-size: 1.1rem;
+  }
+  
+  .coordenadas-display-moderno {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .coord-item {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .mapa-contenedor-moderno {
+    height: 300px;
+  }
+  
+  .mapa-footer-moderno {
+    padding: 14px 16px;
+  }
+  
+  .info-item {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .info-item i {
+    align-self: flex-start;
+  }
+}
+
+/* Efectos de hover suaves */
+.mapa-moderno {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mapa-moderno:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+}
+
+/* Scrollbar personalizado para iframe (cuando es necesario) */
+.mapa-contenedor-moderno::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mapa-contenedor-moderno::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+.mapa-contenedor-moderno::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.mapa-contenedor-moderno::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}

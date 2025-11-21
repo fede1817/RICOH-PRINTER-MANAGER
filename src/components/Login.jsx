@@ -25,7 +25,7 @@ const Login = ({ onLogin }) => {
         title: 'Campos requeridos',
         text: 'Por favor ingresa tu correo y contraseña',
         background: "#2c2c2c",
-      color: "#fff",
+        color: "#fff",
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Entendido'
       });
@@ -62,23 +62,36 @@ const Login = ({ onLogin }) => {
         // Verificar si el usuario es administrador
         const isAdmin = userData.rol?.nombrerol === 'ADMINISTRADOR';
         
+        // 🔥 DETECTAR SI HAY PARÁMETROS DE CENSO EN LA URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const censoParam = urlParams.get('censo');
+        const sectionParam = urlParams.get('section');
+        
+        // 🔥 SI HAY PARÁMETROS DE CENSO, FORZAR LA SECCIÓN DE CENSOS
+        let seccionInicial = isAdmin ? "impresoras" : "pedidos";
+        if (censoParam || sectionParam === 'censos') {
+          seccionInicial = "censos";
+        }
+        
         // Guardar datos del usuario en localStorage
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('isAdmin', isAdmin.toString());
         localStorage.setItem('authCredentials', credentialsBase64);
+        localStorage.setItem('tablaActiva', seccionInicial); // 🔥 Guardar sección inicial
         
         await Swal.fire({
           icon: 'success',
           title: `¡Bienvenido ${userData.nombrepersona}!`,
           text: isAdmin ? 'Acceso completo como Administrador' : 'Acceso limitado a pedidos',
           background: "#2c2c2c",
-      color: "#fff",
+          color: "#fff",
           confirmButtonColor: '#10B981',
           confirmButtonText: 'Continuar'
         });
 
-        onLogin(userData, isAdmin);
+        // 🔥 PASAR LA SECCIÓN INICIAL AL onLogin
+        onLogin(userData, isAdmin, seccionInicial);
       } else if (response.status === 401) {
         throw new Error('Credenciales incorrectas');
       } else {
@@ -94,8 +107,8 @@ const Login = ({ onLogin }) => {
           : error.message === 'Usuario no encontrado'
           ? 'Usuario no encontrado en el sistema'
           : 'Error al conectar con el servidor',
-          background: "#2c2c2c",
-      color: "#fff",
+        background: "#2c2c2c",
+        color: "#fff",
         confirmButtonColor: '#EF4444',
         confirmButtonText: 'Intentar nuevamente'
       });

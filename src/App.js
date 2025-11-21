@@ -16,9 +16,11 @@ import {
   IoIosCart,
   IoIosLogOut,
   IoIosPerson,
+  IoIosPersonAdd,
 } from "react-icons/io";
 import ServerStatusTable from "./components/ServerStatusTable";
 import PedidosSection from "./components/PedidosSection";
+import Censo from "./components/Censo";
 
 function App() {
   const [impresoras, setImpresoras] = useState([]);
@@ -34,7 +36,13 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [infoModal, setInfoModal] = useState({ visible: false, data: null });
   const [showLoadingMessage, setShowLoadingMessage] = useState(false);
-  const [tablaActiva, setTablaActiva] = useState("impresoras");
+
+  // 🔥 PERSISTIR tablaActiva EN localStorage
+  const [tablaActiva, setTablaActiva] = useState(() => {
+    const saved = localStorage.getItem("tablaActiva");
+    return saved || "impresoras";
+  });
+
   const [tipoImpresoraActiva, setTipoImpresoraActiva] = useState("principal");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -56,7 +64,27 @@ function App() {
       setIsAdmin(adminStatus === "true");
       setUser(userData ? JSON.parse(userData) : null);
     }
+
+    // 🔥 VERIFICAR PARÁMETROS URL PARA DETERMINAR LA SECCIÓN
+    const urlParams = new URLSearchParams(window.location.search);
+    const censoParam = urlParams.get("censo");
+    const sectionParam = urlParams.get("section");
+
+    if (censoParam || sectionParam === "censos") {
+      // Si hay parámetro de censo o section=censos, activar la sección de censos
+      setTablaActiva("censos");
+    }
   }, []);
+
+  // 🔥 GUARDAR tablaActiva EN localStorage CUANDO CAMBIE
+  useEffect(() => {
+    localStorage.setItem("tablaActiva", tablaActiva);
+  }, [tablaActiva]);
+
+  // 🔥 FUNCIÓN PARA CAMBIAR TABLA ACTIVA
+  const handleTablaActivaChange = (nuevaTabla) => {
+    setTablaActiva(nuevaTabla);
+  };
 
   // ✅ Función para cargar impresoras
   const fetchImpresoras = (showMessage = false) => {
@@ -88,15 +116,19 @@ function App() {
   }, [isAuthenticated, isAdmin]);
 
   // Función de login
-  const handleLogin = (userData, adminStatus) => {
+  // En App.js, modifica la función handleLogin
+  const handleLogin = (userData, adminStatus, seccionInicial = null) => {
     setUser(userData);
     setIsAuthenticated(true);
     setIsAdmin(adminStatus);
 
-    // Si no es admin, mostrar solo pedidos
-    if (!adminStatus) {
+    // 🔥 USAR LA SECCIÓN INICIAL SI SE PROPORCIONA, SINO LA LÓGICA NORMAL
+    if (seccionInicial) {
+      setTablaActiva(seccionInicial);
+    } else if (!adminStatus) {
       setTablaActiva("pedidos");
     }
+    // Si es admin y no hay sección inicial, se mantiene la que estaba en localStorage
   };
 
   // Función de logout
@@ -118,6 +150,7 @@ function App() {
       localStorage.removeItem("isAuthenticated");
       localStorage.removeItem("isAdmin");
       localStorage.removeItem("user");
+      localStorage.removeItem("tablaActiva"); // 🔥 Limpiar también el estado de tabla
       setIsAuthenticated(false);
       setIsAdmin(false);
       setUser(null);
@@ -375,6 +408,11 @@ Correo: ${pedidoData.correo}
           label: "Pedidos",
           icon: <IoIosCart className="text-2xl" />,
         },
+        {
+          id: "censos",
+          label: "Censos",
+          icon: <IoIosPersonAdd className="text-2xl" />,
+        },
       ]
     : [
         {
@@ -426,7 +464,7 @@ Correo: ${pedidoData.correo}
             {menuItems.map((item) => (
               <li key={item.id}>
                 <button
-                  onClick={() => setTablaActiva(item.id)}
+                  onClick={() => handleTablaActivaChange(item.id)}
                   className={`
                     w-full flex items-center rounded-lg transition-all duration-200
                     ${
@@ -494,6 +532,7 @@ Correo: ${pedidoData.correo}
                 {tablaActiva === "impresoras" && "Gestión de Impresoras"}
                 {tablaActiva === "servidores" && "Estado del Servidor"}
                 {tablaActiva === "pedidos" && "Lista de Pedidos"}
+                {tablaActiva === "censos" && "Validador de Censos"}
               </h1>
               {!isAdmin && (
                 <p className="text-sm text-gray-400 mt-1">
@@ -573,6 +612,11 @@ Correo: ${pedidoData.correo}
           <div>
             {tablaActiva === "pedidos" && <PedidosSection urls={urls} />}
           </div>
+          {tablaActiva === "censos" && isAdmin && (
+            <div id="censos">
+              <Censo />
+            </div>
+          )}
         </main>
       </div>
 
