@@ -11,6 +11,8 @@ import {
   IoIosTrash,
   IoIosPlay,
   IoIosRefresh,
+  IoIosArrowUp,
+  IoIosArrowDown,
 } from "react-icons/io";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
@@ -22,12 +24,21 @@ const PedidosSection = ({urls}) => {
     sucursal: "",
     modelo_impresora: "",
     tipo_toner: "",
-    cantidad: ""
+    cantidad: "",
+    toner_modelo: "" // 🔥 NUEVO CAMPO PARA EL MODELO DE TONER
   });
   const [pedidos, setPedidos] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // 🔥 ESTADOS PARA PAGINACIÓN Y ORDENAMIENTO
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: 'ascending'
+  });
 
   // Verificar si el usuario es administrador al cargar el componente
   useEffect(() => {
@@ -63,12 +74,113 @@ const PedidosSection = ({urls}) => {
     "ENC",
     "CAAG",
     'PJC',
-    'SAMT',
+    'SANT',
     'MIS',
     'CONC',
   ];
 
-  // Objeto que mapea cada sucursal con sus modelos de impresora
+  // 🔥 MAPEO COMPLETO DE MODELOS DE IMPRESORA A TONERS
+  const modelosYToners = {
+  "HP LaserJet Pro MFP M135w": {
+    modelos: ["HP LaserJet Pro MFP M135w"],
+    toner: "HP 150A (W1500A)",  
+    tipo: "Blanco y negro"
+  },
+  "HP LaserJet P1102w": {
+    modelos: ["HP LaserJet P1102w"],
+    toner: "HP 85A (CE285A)",  
+    tipo: "Blanco y negro"
+  },
+  "HP LaserJet M111w": {
+    modelos: ["HP LaserJet M111w"],
+    toner: "HP 150A (W1500A)",  // corregido
+    tipo: "Blanco y negro"
+  },
+  "HP LaserJet Pro M107w": {
+    modelos: ["HP LaserJet Pro M107w"],
+    toner: "HP 107A (W2070X)",
+    tipo: "Blanco y negro"
+  },
+  "HP LaserJet Pro MFP M201": {
+    modelos: ["HP LaserJet Pro MFP M201", "HP LaserJet Pro M201"],
+    toner: "HP 83A (CF283A)",  // confirmado para M201/M201dw etc :contentReference[oaicite:0]{index=0}
+    tipo: "Blanco y negro"
+  },
+  "HP DESKJET INK ADVANTAGE 3775": {
+    modelos: ["HP DESKJET INK ADVANTAGE 3775"],
+    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    tipo: "Color"
+  },
+  "HP LaserJet Pro M203": {
+    modelos: ["HP LaserJet Pro M203"],
+    toner: "HP 83A (CF283A)",  // M203 también usa 83A en algunos casos
+    tipo: "Blanco y negro"
+  },
+  "HP LaserJet Pl 102w": {
+    modelos: ["HP LaserJet P1102w", "HP LaserJet PL 102w"],  // ojo con el nombre, puede variar
+    toner: "HP 85A (CE285A)",
+    tipo: "Blanco y negro"
+  },
+  "HP DESKJET 2130": {
+    modelos: ["HP DESKJET 2130"],
+    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    tipo: "Color"
+  },
+  "HP DESKJET 2700": {
+    modelos: ["HP DESKJET 2700"],
+    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    tipo: "Color"
+  },
+  "HP LaserJet Pro M127fn": {
+    modelos: ["HP LaserJet Pro M127fn"],
+    toner: "HP 125A (CF125A)",
+    tipo: "Blanco y negro"
+  },
+  "HP Deskjet Ink Advantage 2375": {
+    modelos: ["HP Deskjet Ink Advantage 2375"],
+    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    tipo: "Color"
+  },
+  "HP LaserJet Pro M203dw": {
+    modelos: ["HP LaserJet Pro M203dw"],
+    toner: "HP 83A (CF283A)",
+    tipo: "Blanco y negro"
+  },
+  "HP DeskJet 2775": {
+    modelos: ["HP DeskJet 2775"],
+    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    tipo: "Color"
+  },
+  "HP LaserJet Pro M102w": {
+    modelos: ["HP LaserJet Pro M102w"],
+    toner: "HP 107A (W2070X)",  // verificar según manuales, puede variar
+    tipo: "Blanco y negro"
+  },
+  "HP LaserJet Pro M201dw": {
+    modelos: ["HP LaserJet Pro M201dw"],
+    toner: "HP 83A (CF283A)",
+    tipo: "Blanco y negro"
+  }
+};
+
+
+  // 🔥 FUNCIÓN PARA OBTENER INFORMACIÓN DEL TONER SEGÚN EL MODELO
+  const getTonerInfo = (modeloImpresora) => {
+    for (const [key, value] of Object.entries(modelosYToners)) {
+      if (value.modelos.includes(modeloImpresora)) {
+        return {
+          toner: value.toner,
+          tipo: value.tipo
+        };
+      }
+    }
+    return {
+      toner: "No especificado",
+      tipo: "Blanco y negro"
+    };
+  };
+
+  // Objeto que mapea cada sucursal con sus modelos de impresora (actualizado con los modelos correctos)
   const modelosPorSucursal = {
     "CDE": [
       "HP LaserJet Pro MFP M135w",
@@ -90,7 +202,7 @@ const PedidosSection = ({urls}) => {
       "HP DESKJET 2700",
       "HP LaserJet Pro m127FN"
     ],
-    "SAMT": [
+    "SANT": [
       "HP LaserJet Pro M107w",
       "HP LaserJet Pro MFP M135w",
       "HP Deskjet Ink Advantage 2375"
@@ -112,6 +224,202 @@ const PedidosSection = ({urls}) => {
     "Blanco y negro",
     "Color"
   ];
+
+  // 🔥 ACTUALIZAR TONER AUTOMÁTICAMENTE CUANDO CAMBIA EL MODELO
+  useEffect(() => {
+    if (formData.modelo_impresora) {
+      const tonerInfo = getTonerInfo(formData.modelo_impresora);
+      setFormData(prev => ({
+        ...prev,
+        toner_modelo: tonerInfo.toner,
+        tipo_toner: tonerInfo.tipo
+      }));
+    }
+  }, [formData.modelo_impresora]);
+
+  // 🔥 FUNCIONES DE PAGINACIÓN Y ORDENAMIENTO
+  const handleSort = (key) => {
+    let direction = 'ascending';
+    
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    } else if (sortConfig.key === key && sortConfig.direction === 'descending') {
+      setSortConfig({ key: null, direction: 'ascending' });
+      return;
+    }
+    
+    setSortConfig({ key, direction });
+    setCurrentPage(1); // Volver a la primera página al ordenar
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) {
+      return <IoIosArrowUp className="opacity-30" />;
+    }
+    return sortConfig.direction === 'ascending' 
+      ? <IoIosArrowUp className="text-blue-400" />
+      : <IoIosArrowDown className="text-blue-400" />;
+  };
+
+  const sortData = (data) => {
+    if (!sortConfig.key) return data;
+
+    const sortedData = [...data].sort((a, b) => {
+      let aValue = a[sortConfig.key];
+      let bValue = b[sortConfig.key];
+
+      // Manejo especial para fechas
+      if (sortConfig.key === 'fecha_pedido') {
+        aValue = new Date(aValue);
+        bValue = new Date(bValue);
+      }
+
+      // Manejo especial para cantidades numéricas
+      if (sortConfig.key === 'cantidad') {
+        aValue = parseInt(aValue);
+        bValue = parseInt(bValue);
+      }
+
+      // Manejo especial para estado
+      if (sortConfig.key === 'estado') {
+        const estadoOrden = { 'pendiente': 1, 'aprobado': 2, 'rechazado': 3 };
+        aValue = estadoOrden[aValue] || 0;
+        bValue = estadoOrden[bValue] || 0;
+      }
+
+      // Convertir a string para comparación case-insensitive si no es número
+      if (typeof aValue !== 'number') {
+        aValue = String(aValue || '').toLowerCase();
+        bValue = String(bValue || '').toLowerCase();
+      }
+
+      // Comparar
+      if (aValue < bValue) {
+        return sortConfig.direction === 'ascending' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    return sortedData;
+  };
+
+  // 🔥 CALCULAR DATOS PAGINADOS
+  const sortedPedidos = sortData(pedidos);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedPedidos.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedPedidos.length / itemsPerPage);
+
+  // 🔥 FUNCIÓN PARA CAMBIAR PÁGINA
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // 🔥 FUNCIÓN PARA CAMBIAR ITEMS POR PÁGINA
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Volver a la primera página
+  };
+
+  // 🔥 GENERAR BOTONES DE PAGINACIÓN
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    const maxVisiblePages = 5;
+
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Ajustar startPage si estamos cerca del final
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // Botón anterior
+    buttons.push(
+      <button
+        key="prev"
+        onClick={() => handlePageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <IoIosArrowBack className="inline" />
+      </button>
+    );
+
+    // Primera página y puntos suspensivos si es necesario
+    if (startPage > 1) {
+      buttons.push(
+        <button
+          key={1}
+          onClick={() => handlePageChange(1)}
+          className="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600"
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        buttons.push(
+          <span key="ellipsis1" className="px-2 py-1">
+            ...
+          </span>
+        );
+      }
+    }
+
+    // Páginas visibles
+    for (let i = startPage; i <= endPage; i++) {
+      buttons.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-1 rounded ${
+            currentPage === i 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-700 hover:bg-gray-600'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    // Última página y puntos suspensivos si es necesario
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        buttons.push(
+          <span key="ellipsis2" className="px-2 py-1">
+            ...
+          </span>
+        );
+      }
+      buttons.push(
+        <button
+          key={totalPages}
+          onClick={() => handlePageChange(totalPages)}
+          className="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600"
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    // Botón siguiente
+    buttons.push(
+      <button
+        key="next"
+        onClick={() => handlePageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <IoIosArrowForward className="inline" />
+      </button>
+    );
+
+    return buttons;
+  };
 
   // Función para obtener los modelos según la sucursal seleccionada
   const getModelosPorSucursal = () => {
@@ -159,7 +467,9 @@ const PedidosSection = ({urls}) => {
     if (formData.sucursal) {
       setFormData(prev => ({
         ...prev,
-        modelo_impresora: ""
+        modelo_impresora: "",
+        toner_modelo: "",
+        tipo_toner: ""
       }));
     }
   }, [formData.sucursal]);
@@ -179,8 +489,8 @@ const PedidosSection = ({urls}) => {
         title: 'Campo requerido',
         text: 'Por favor completa todos los campos antes de continuar',
         confirmButtonColor: '#3085d6',
-         background: "#2c2c2c",
-          color: "#fff",
+        background: "#2c2c2c",
+        color: "#fff",
         confirmButtonText: 'Entendido'
       });
       return;
@@ -212,12 +522,18 @@ const PedidosSection = ({urls}) => {
     }
 
     try {
+      // 🔥 INCLUIR EL MODELO DE TONER EN EL ENVÍO
+      const datosEnvio = {
+        ...formData,
+        toner_modelo: formData.toner_modelo || getTonerInfo(formData.modelo_impresora).toner
+      };
+
       const response = await fetch(`${urls}/api/pedidos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(datosEnvio),
       });
 
       if (response.ok) {
@@ -237,7 +553,8 @@ const PedidosSection = ({urls}) => {
           sucursal: "", 
           modelo_impresora: "",
           tipo_toner: "",
-          cantidad: ""
+          cantidad: "",
+          toner_modelo: ""
         });
         setCurrentStep(0);
         setShowForm(false);
@@ -260,8 +577,8 @@ const PedidosSection = ({urls}) => {
         icon: 'error',
         title: 'Error de conexión',
         text: 'No se pudo conectar con el servidor',
-         background: "#2c2c2c",
-          color: "#fff",
+        background: "#2c2c2c",
+        color: "#fff",
         confirmButtonColor: '#EF4444',
         confirmButtonText: 'Entendido'
       });
@@ -411,11 +728,12 @@ const PedidosSection = ({urls}) => {
       return;
     }
 
-    // Preparar datos para Excel con mejor formato
+    // 🔥 INCLUIR EL MODELO DE TONER EN EL EXCEL
     const datosExcel = pedidosPendientes.map(pedido => ({
       'SOLICITANTE': pedido.solicitante.toUpperCase(),
       'SUCURSAL': pedido.sucursal,
       'MODELO DE IMPRESORA': pedido.modelo_impresora,
+      'MODELO DE TONER': pedido.toner_modelo || getTonerInfo(pedido.modelo_impresora).toner,
       'TIPO DE TONER': pedido.tipo_toner,
       'CANTIDAD': pedido.cantidad,
       'FECHA DE PEDIDO': new Date(pedido.fecha_pedido).toLocaleDateString('es-ES', {
@@ -471,17 +789,18 @@ const PedidosSection = ({urls}) => {
         };
         
         // Formato especial para columna de cantidad
-        if (C === 4) { // Columna de cantidad
+        if (C === 5) { // Columna de cantidad (ahora en posición 5 por la nueva columna)
           ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
         }
       }
     }
     
-    // Ajustar anchos de columnas
+    // 🔥 AJUSTAR ANCHOS DE COLUMNAS CON LA NUEVA COLUMNA
     const colWidths = [
       { wch: 20 }, // Solicitante
       { wch: 10 }, // Sucursal
-      { wch: 35 }, // Modelo
+      { wch: 35 }, // Modelo Impresora
+      { wch: 25 }, // Modelo Toner 🔥 NUEVA COLUMNA
       { wch: 15 }, // Tipo Toner
       { wch: 10 }, // Cantidad
       { wch: 15 }, // Fecha
@@ -513,7 +832,8 @@ const PedidosSection = ({urls}) => {
       sucursal: "",
       modelo_impresora: "", 
       tipo_toner: "",
-      cantidad: ""
+      cantidad: "",
+      toner_modelo: ""
     });
     setCurrentStep(0);
   };
@@ -524,7 +844,8 @@ const PedidosSection = ({urls}) => {
       sucursal: "",
       modelo_impresora: "", 
       tipo_toner: "",
-      cantidad: ""
+      cantidad: "",
+      toner_modelo: ""
     });
     setCurrentStep(0);
     setShowForm(false);
@@ -549,6 +870,7 @@ const PedidosSection = ({urls}) => {
   const renderStepContent = () => {
     const step = steps[currentStep];
     const modelosDisponibles = getModelosPorSucursal();
+    const tonerInfo = formData.modelo_impresora ? getTonerInfo(formData.modelo_impresora) : null;
     
     switch(currentStep) {
       case 0: // Solicitante
@@ -604,18 +926,34 @@ const PedidosSection = ({urls}) => {
                 <p className="text-white">Primero debes seleccionar una sucursal</p>
               </div>
             ) : (
-              <select
-                name="modelo_impresora"
-                value={formData.modelo_impresora}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Elige un modelo disponible en {formData.sucursal}</option>
-                {modelosDisponibles.map((modelo) => (
-                  <option key={modelo} value={modelo}>{modelo}</option>
-                ))}
-              </select>
+              <div className="space-y-4">
+                <select
+                  name="modelo_impresora"
+                  value={formData.modelo_impresora}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Elige un modelo disponible en {formData.sucursal}</option>
+                  {modelosDisponibles.map((modelo) => (
+                    <option key={modelo} value={modelo}>{modelo}</option>
+                  ))}
+                </select>
+                
+                {/* 🔥 MOSTRAR INFORMACIÓN DEL TONER CUANDO SE SELECCIONA UN MODELO */}
+                {formData.modelo_impresora && tonerInfo && (
+                  <div className="p-3 bg-blue-900 rounded-lg border border-blue-700">
+                    <div className="flex items-center space-x-2 text-sm">
+                      <span className="text-blue-300 font-semibold">Toner asignado:</span>
+                      <span className="text-white">{tonerInfo.toner}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm mt-1">
+                      <span className="text-blue-300 font-semibold">Tipo:</span>
+                      <span className="text-white">{tonerInfo.tipo}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         );
@@ -623,23 +961,64 @@ const PedidosSection = ({urls}) => {
       case 3: // Tipo de Toner
         return (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-center mb-6">Tipo de Toner</h2>
-            <div className="space-y-3">
-              {tiposToner.map((tipo) => (
-                <label key={tipo} className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg hover:bg-gray-600 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="tipo_toner"
-                    value={tipo}
-                    checked={formData.tipo_toner === tipo}
-                    onChange={handleInputChange}
-                    className="text-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                  <span className="text-white">{tipo}</span>
-                </label>
-              ))}
-            </div>
+            <h2 className="text-2xl font-bold text-center mb-6">Confirmar Tipo de Toner</h2>
+            {formData.modelo_impresora && tonerInfo ? (
+              <div className="space-y-3">
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <div className="text-center mb-3">
+                    <p className="text-lg font-semibold text-white">Modelo: {formData.modelo_impresora}</p>
+                    <p className="text-blue-300 mt-1">Toner: {tonerInfo.toner}</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-3 p-3 bg-gray-600 rounded-lg cursor-pointer">
+                      <input
+                        type="radio"
+                        name="tipo_toner"
+                        value={tonerInfo.tipo}
+                        checked={formData.tipo_toner === tonerInfo.tipo}
+                        onChange={handleInputChange}
+                        className="text-blue-500 focus:ring-blue-500"
+                        required
+                      />
+                      <span className="text-white">{tonerInfo.tipo} (Recomendado)</span>
+                    </label>
+                    
+                    {/* Permitir cambiar el tipo si es necesario */}
+                    {tonerInfo.tipo === "Blanco y negro" && (
+                      <label className="flex items-center space-x-3 p-3 bg-gray-600 rounded-lg cursor-pointer">
+                        <input
+                          type="radio"
+                          name="tipo_toner"
+                          value="Color"
+                          checked={formData.tipo_toner === "Color"}
+                          onChange={handleInputChange}
+                          className="text-blue-500 focus:ring-blue-500"
+                        />
+                        <span className="text-white">Color</span>
+                      </label>
+                    )}
+                    {tonerInfo.tipo === "Color" && (
+                      <label className="flex items-center space-x-3 p-3 bg-gray-600 rounded-lg cursor-pointer">
+                        <input
+                          type="radio"
+                          name="tipo_toner"
+                          value="Blanco y negro"
+                          checked={formData.tipo_toner === "Blanco y negro"}
+                          onChange={handleInputChange}
+                          className="text-blue-500 focus:ring-blue-500"
+                        />
+                        <span className="text-white">Blanco y negro</span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center p-4 bg-yellow-600 rounded-lg">
+                <p className="text-white">Primero debes seleccionar un modelo de impresora</p>
+              </div>
+            )}
           </div>
         );
 
@@ -647,6 +1026,15 @@ const PedidosSection = ({urls}) => {
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-center mb-6">Cantidad</h2>
+            {formData.modelo_impresora && tonerInfo && (
+              <div className="p-3 bg-blue-900 rounded-lg border border-blue-700 mb-4">
+                <div className="text-center">
+                  <p className="text-white font-semibold">{formData.modelo_impresora}</p>
+                  <p className="text-blue-300 text-sm">Toner: {tonerInfo.toner}</p>
+                  <p className="text-blue-300 text-sm">Tipo: {formData.tipo_toner}</p>
+                </div>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Cantidad de toners
@@ -692,6 +1080,35 @@ const PedidosSection = ({urls}) => {
         </button>
       </div>
 
+      {/* 🔥 CONTROLES DE PAGINACIÓN SUPERIOR */}
+      {pedidos.length > 0 && (
+        <div className="flex justify-between items-center mb-4 p-3 bg-gray-700 rounded-lg">
+          <div className="text-sm text-gray-300">
+            Mostrando {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, sortedPedidos.length)} de {sortedPedidos.length} pedidos
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <label className="text-sm text-gray-300">Mostrar:</label>
+              <select
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
+                className="bg-gray-600 text-white rounded px-2 py-1 text-sm"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+            
+            <div className="flex space-x-1">
+              {renderPaginationButtons()}
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -713,74 +1130,174 @@ const PedidosSection = ({urls}) => {
             <table className="w-full h-full text-white min-w-full">
               <thead className="bg-gray-700">
                 <tr>
-                  <th className="py-3 px-4 text-left">Solicitante</th>
-                  <th className="py-3 px-4 text-left">Sucursal</th>
-                  <th className="py-3 px-4 text-left">Modelo</th>
-                  <th className="py-3 px-4 text-left">Tipo</th>
-                  <th className="py-3 px-4 text-left">Cantidad</th>
-                  <th className="py-3 px-4 text-left">Fecha</th>
-                  <th className="py-3 px-4 text-left">Estado</th>
+                  <th 
+                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    onClick={() => handleSort('solicitante')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Solicitante</span>
+                      {getSortIcon('solicitante')}
+                    </div>
+                  </th>
+                  <th 
+                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    onClick={() => handleSort('sucursal')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Sucursal</span>
+                      {getSortIcon('sucursal')}
+                    </div>
+                  </th>
+                  <th 
+                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    onClick={() => handleSort('modelo_impresora')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Modelo Impresora</span>
+                      {getSortIcon('modelo_impresora')}
+                    </div>
+                  </th>
+                  <th 
+                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    onClick={() => handleSort('toner_modelo')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Modelo Toner</span>
+                      {getSortIcon('toner_modelo')}
+                    </div>
+                  </th>
+                  <th 
+                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    onClick={() => handleSort('tipo_toner')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Tipo</span>
+                      {getSortIcon('tipo_toner')}
+                    </div>
+                  </th>
+                  <th 
+                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    onClick={() => handleSort('cantidad')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Cantidad</span>
+                      {getSortIcon('cantidad')}
+                    </div>
+                  </th>
+                  <th 
+                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    onClick={() => handleSort('fecha_pedido')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Fecha</span>
+                      {getSortIcon('fecha_pedido')}
+                    </div>
+                  </th>
+                  <th 
+                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    onClick={() => handleSort('estado')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Estado</span>
+                      {getSortIcon('estado')}
+                    </div>
+                  </th>
                   <th className="py-3 px-4 text-left">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {pedidos.map((pedido) => (
-                  <tr key={pedido.id} className="hover:bg-gray-700 transition-colors">
-                    <td className="py-3 px-4 whitespace-nowrap">{pedido.solicitante}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">{pedido.sucursal}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">{pedido.modelo_impresora}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">{pedido.tipo_toner}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">{pedido.cantidad}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      {new Date(pedido.fecha_pedido).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getEstadoColor(pedido.estado)}`}>
-                        {getEstadoText(pedido.estado)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="flex space-x-2">
-                        {/* Solo mostrar botón Procesar si es administrador */}
-                        {isAdmin && pedido.estado === 'pendiente' && (
+                {currentItems.map((pedido) => {
+                  const tonerInfo = getTonerInfo(pedido.modelo_impresora);
+                  return (
+                    <tr key={pedido.id} className="hover:bg-gray-700 transition-colors">
+                      <td className="py-3 px-4 whitespace-nowrap">{pedido.solicitante}</td>
+                      <td className="py-3 px-4 whitespace-nowrap">{pedido.sucursal}</td>
+                      <td className="py-3 px-4 whitespace-nowrap">{pedido.modelo_impresora}</td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="text-blue-300 font-medium">
+                          {pedido.toner_modelo || tonerInfo.toner}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">{pedido.tipo_toner}</td>
+                      <td className="py-3 px-4 whitespace-nowrap">{pedido.cantidad}</td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {new Date(pedido.fecha_pedido).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getEstadoColor(pedido.estado)}`}>
+                          {getEstadoText(pedido.estado)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="flex space-x-2">
+                          {/* Solo mostrar botón Procesar si es administrador */}
+                          {isAdmin && pedido.estado === 'pendiente' && (
+                            <button
+                              onClick={() => procesarPedido(pedido.id)}
+                              className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                              title="Procesar pedido"
+                            >
+                              <IoIosPlay />
+                              <span>Procesar</span>
+                            </button>
+                          )}
+                          
+                          {/* Solo mostrar botón Volver a Pendiente si es administrador */}
+                          {isAdmin && pedido.estado === 'aprobado' && (
+                            <button
+                              onClick={() => volverAPendiente(pedido.id)}
+                              className="flex items-center space-x-1 bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                              title="Volver a pendiente"
+                            >
+                              <IoIosRefresh />
+                              <span>Pendiente</span>
+                            </button>
+                          )}
+                          
+                          {/* Botón Eliminar visible para todos los usuarios */}
                           <button
-                            onClick={() => procesarPedido(pedido.id)}
-                            className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition-colors"
-                            title="Procesar pedido"
+                            onClick={() => eliminarPedido(pedido.id)}
+                            className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                            title="Eliminar pedido"
                           >
-                            <IoIosPlay />
-                            <span>Procesar</span>
+                            <IoIosTrash />
+                            <span>Eliminar</span>
                           </button>
-                        )}
-                        
-                        {/* Solo mostrar botón Volver a Pendiente si es administrador */}
-                        {isAdmin && pedido.estado === 'aprobado' && (
-                          <button
-                            onClick={() => volverAPendiente(pedido.id)}
-                            className="flex items-center space-x-1 bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs transition-colors"
-                            title="Volver a pendiente"
-                          >
-                            <IoIosRefresh />
-                            <span>Pendiente</span>
-                          </button>
-                        )}
-                        
-                        {/* Botón Eliminar visible para todos los usuarios */}
-                        <button
-                          onClick={() => eliminarPedido(pedido.id)}
-                          className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition-colors"
-                          title="Eliminar pedido"
-                        >
-                          <IoIosTrash />
-                          <span>Eliminar</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
+
+          {/* 🔥 CONTROLES DE PAGINACIÓN INFERIOR */}
+          {pedidos.length > 0 && (
+            <div className="flex justify-between items-center mt-4 p-3 bg-gray-700 rounded-lg">
+              <div className="text-sm text-gray-300">
+                Página {currentPage} de {totalPages} - {sortedPedidos.length} pedidos totales
+              </div>
+              
+              <div className="flex space-x-1">
+                {renderPaginationButtons()}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <label className="text-sm text-gray-300">Mostrar:</label>
+                <select
+                  value={itemsPerPage}
+                  onChange={handleItemsPerPageChange}
+                  className="bg-gray-600 text-white rounded px-2 py-1 text-sm"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

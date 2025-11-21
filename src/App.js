@@ -44,7 +44,7 @@ function App() {
   });
 
   const [tipoImpresoraActiva, setTipoImpresoraActiva] = useState("principal");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   // Estados de autenticación
   const [isAuthenticated, setIsAuthenticated] = useState(false);
