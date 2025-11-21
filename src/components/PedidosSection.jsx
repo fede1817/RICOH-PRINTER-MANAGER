@@ -940,7 +940,6 @@ const PedidosSection = ({urls}) => {
                   ))}
                 </select>
                 
-                {/* 🔥 MOSTRAR INFORMACIÓN DEL TONER CUANDO SE SELECCIONA UN MODELO */}
                 {formData.modelo_impresora && tonerInfo && (
                   <div className="p-3 bg-blue-900 rounded-lg border border-blue-700">
                     <div className="flex items-center space-x-2 text-sm">
@@ -984,7 +983,6 @@ const PedidosSection = ({urls}) => {
                       <span className="text-white">{tonerInfo.tipo} (Recomendado)</span>
                     </label>
                     
-                    {/* Permitir cambiar el tipo si es necesario */}
                     {tonerInfo.tipo === "Blanco y negro" && (
                       <label className="flex items-center space-x-3 p-3 bg-gray-600 rounded-lg cursor-pointer">
                         <input
@@ -1059,37 +1057,39 @@ const PedidosSection = ({urls}) => {
     }
   };
 
-  // Vista de lista de pedidos
+  // 🔥 VISTA COMPACTA PERO CON FUENTES MÁS GRANDES
   const renderPedidosList = () => (
-    <div className="w-full h-full bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col">
-      <div className="flex justify-between items-center mb-6">
+    <div className="w-full h-full bg-gray-800 rounded-lg shadow-lg p-4 flex flex-col">
+      <div className="flex justify-between items-center mb-4">
         <button
           onClick={() => setShowForm(true)}
           className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+          title="Hacer nuevo pedido"
         >
           <IoIosAdd className="text-lg" />
-          <span>Hacer Pedido</span>
+          <span className="text-sm">Nuevo Pedido</span>
         </button>
         
         <button
           onClick={descargarExcel}
           className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+          title="Descargar Excel de pedidos pendientes"
         >
           <IoIosDownload className="text-lg" />
-          <span>Descargar Excel</span>
+          <span className="text-sm">Exportar Excel</span>
         </button>
       </div>
 
       {/* 🔥 CONTROLES DE PAGINACIÓN SUPERIOR */}
       {pedidos.length > 0 && (
-        <div className="flex justify-between items-center mb-4 p-3 bg-gray-700 rounded-lg">
-          <div className="text-sm text-gray-300">
+        <div className="flex justify-between items-center mb-3 p-3 bg-gray-700 rounded">
+          <div className="text-gray-300 text-sm">
             Mostrando {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, sortedPedidos.length)} de {sortedPedidos.length} pedidos
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <label className="text-sm text-gray-300">Mostrar:</label>
+              <label className="text-gray-300 text-sm">Mostrar:</label>
               <select
                 value={itemsPerPage}
                 onChange={handleItemsPerPageChange}
@@ -1112,16 +1112,16 @@ const PedidosSection = ({urls}) => {
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="text-gray-400 mt-2">Cargando pedidos...</p>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="text-gray-400 mt-2 text-sm">Cargando pedidos...</p>
           </div>
         </div>
       ) : pedidos.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <IoIosList className="text-6xl text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">No hay pedidos registrados</p>
-            <p className="text-gray-500">Haz clic en "Hacer Pedido" para crear uno nuevo</p>
+            <IoIosList className="text-5xl text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-400">No hay pedidos registrados</p>
+            <p className="text-gray-500 text-sm mt-1">Haz clic en "Nuevo Pedido" para crear uno</p>
           </div>
         </div>
       ) : (
@@ -1131,78 +1131,86 @@ const PedidosSection = ({urls}) => {
               <thead className="bg-gray-700">
                 <tr>
                   <th 
-                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    className="py-3 px-3 text-left cursor-pointer hover:bg-gray-600 transition-colors"
                     onClick={() => handleSort('solicitante')}
+                    title="Ordenar por solicitante"
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Solicitante</span>
+                      <span className="text-sm font-medium">Solicitante</span>
                       {getSortIcon('solicitante')}
                     </div>
                   </th>
                   <th 
-                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    className="py-3 px-3 text-left cursor-pointer hover:bg-gray-600 transition-colors"
                     onClick={() => handleSort('sucursal')}
+                    title="Ordenar por sucursal"
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Sucursal</span>
+                      <span className="text-sm font-medium">Sucursal</span>
                       {getSortIcon('sucursal')}
                     </div>
                   </th>
                   <th 
-                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    className="py-3 px-3 text-left cursor-pointer hover:bg-gray-600 transition-colors"
                     onClick={() => handleSort('modelo_impresora')}
+                    title="Ordenar por modelo"
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Modelo Impresora</span>
+                      <span className="text-sm font-medium">Modelo</span>
                       {getSortIcon('modelo_impresora')}
                     </div>
                   </th>
                   <th 
-                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    className="py-3 px-3 text-left cursor-pointer hover:bg-gray-600 transition-colors"
                     onClick={() => handleSort('toner_modelo')}
+                    title="Ordenar por toner"
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Modelo Toner</span>
+                      <span className="text-sm font-medium">Toner</span>
                       {getSortIcon('toner_modelo')}
                     </div>
                   </th>
                   <th 
-                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    className="py-3 px-3 text-left cursor-pointer hover:bg-gray-600 transition-colors"
                     onClick={() => handleSort('tipo_toner')}
+                    title="Ordenar por tipo"
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Tipo</span>
+                      <span className="text-sm font-medium">Tipo</span>
                       {getSortIcon('tipo_toner')}
                     </div>
                   </th>
                   <th 
-                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    className="py-3 px-3 text-left cursor-pointer hover:bg-gray-600 transition-colors"
                     onClick={() => handleSort('cantidad')}
+                    title="Ordenar por cantidad"
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Cantidad</span>
+                      <span className="text-sm font-medium">Cant.</span>
                       {getSortIcon('cantidad')}
                     </div>
                   </th>
                   <th 
-                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    className="py-3 px-3 text-left cursor-pointer hover:bg-gray-600 transition-colors"
                     onClick={() => handleSort('fecha_pedido')}
+                    title="Ordenar por fecha"
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Fecha</span>
+                      <span className="text-sm font-medium">Fecha</span>
                       {getSortIcon('fecha_pedido')}
                     </div>
                   </th>
                   <th 
-                    className="py-3 px-4 text-left cursor-pointer hover:bg-gray-600 transition-colors"
+                    className="py-3 px-3 text-left cursor-pointer hover:bg-gray-600 transition-colors"
                     onClick={() => handleSort('estado')}
+                    title="Ordenar por estado"
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Estado</span>
+                      <span className="text-sm font-medium">Estado</span>
                       {getSortIcon('estado')}
                     </div>
                   </th>
-                  <th className="py-3 px-4 text-left">Acciones</th>
+                  <th className="py-3 px-3 text-left text-sm font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
@@ -1210,58 +1218,51 @@ const PedidosSection = ({urls}) => {
                   const tonerInfo = getTonerInfo(pedido.modelo_impresora);
                   return (
                     <tr key={pedido.id} className="hover:bg-gray-700 transition-colors">
-                      <td className="py-3 px-4 whitespace-nowrap">{pedido.solicitante}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">{pedido.sucursal}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">{pedido.modelo_impresora}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="text-blue-300 font-medium">
-                          {pedido.toner_modelo || tonerInfo.toner}
-                        </span>
+                      <td className="py-3 px-3 whitespace-nowrap text-sm">{pedido.solicitante}</td>
+                      <td className="py-3 px-3 whitespace-nowrap text-sm">{pedido.sucursal}</td>
+                      <td className="py-3 px-3 whitespace-nowrap text-sm">{pedido.modelo_impresora}</td>
+                      <td className="py-3 px-3 whitespace-nowrap text-sm text-blue-300 font-medium">
+                        {pedido.toner_modelo || tonerInfo.toner}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">{pedido.tipo_toner}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">{pedido.cantidad}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3 px-3 whitespace-nowrap text-sm">{pedido.tipo_toner}</td>
+                      <td className="py-3 px-3 whitespace-nowrap text-sm text-center">{pedido.cantidad}</td>
+                      <td className="py-3 px-3 whitespace-nowrap text-sm">
                         {new Date(pedido.fecha_pedido).toLocaleDateString()}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getEstadoColor(pedido.estado)}`}>
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getEstadoColor(pedido.estado)}`}>
                           {getEstadoText(pedido.estado)}
                         </span>
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3 px-3 whitespace-nowrap">
                         <div className="flex space-x-2">
-                          {/* Solo mostrar botón Procesar si es administrador */}
+                          {/* 🔥 BOTONES CON ICONOS MÁS GRANDES */}
                           {isAdmin && pedido.estado === 'pendiente' && (
                             <button
                               onClick={() => procesarPedido(pedido.id)}
-                              className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                              className="p-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
                               title="Procesar pedido"
                             >
-                              <IoIosPlay />
-                              <span>Procesar</span>
+                              <IoIosPlay className="text-base" />
                             </button>
                           )}
                           
-                          {/* Solo mostrar botón Volver a Pendiente si es administrador */}
                           {isAdmin && pedido.estado === 'aprobado' && (
                             <button
                               onClick={() => volverAPendiente(pedido.id)}
-                              className="flex items-center space-x-1 bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                              className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
                               title="Volver a pendiente"
                             >
-                              <IoIosRefresh />
-                              <span>Pendiente</span>
+                              <IoIosRefresh className="text-base" />
                             </button>
                           )}
                           
-                          {/* Botón Eliminar visible para todos los usuarios */}
                           <button
                             onClick={() => eliminarPedido(pedido.id)}
-                            className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
                             title="Eliminar pedido"
                           >
-                            <IoIosTrash />
-                            <span>Eliminar</span>
+                            <IoIosTrash className="text-base" />
                           </button>
                         </div>
                       </td>
@@ -1274,8 +1275,8 @@ const PedidosSection = ({urls}) => {
 
           {/* 🔥 CONTROLES DE PAGINACIÓN INFERIOR */}
           {pedidos.length > 0 && (
-            <div className="flex justify-between items-center mt-4 p-3 bg-gray-700 rounded-lg">
-              <div className="text-sm text-gray-300">
+            <div className="flex justify-between items-center mt-3 p-3 bg-gray-700 rounded">
+              <div className="text-gray-300 text-sm">
                 Página {currentPage} de {totalPages} - {sortedPedidos.length} pedidos totales
               </div>
               
@@ -1284,7 +1285,7 @@ const PedidosSection = ({urls}) => {
               </div>
 
               <div className="flex items-center space-x-2">
-                <label className="text-sm text-gray-300">Mostrar:</label>
+                <label className="text-gray-300 text-sm">Mostrar:</label>
                 <select
                   value={itemsPerPage}
                   onChange={handleItemsPerPageChange}
@@ -1303,7 +1304,7 @@ const PedidosSection = ({urls}) => {
     </div>
   );
 
-  // Vista del formulario de pedidos
+  // Vista del formulario de pedidos (sin cambios)
   const renderForm = () => (
     <div className="max-w-md mx-auto bg-gray-800 rounded-lg shadow-lg p-6">
       {/* Progress Bar */}
