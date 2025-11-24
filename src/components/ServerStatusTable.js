@@ -24,7 +24,10 @@ import {
   faSatelliteDish,
   faProjectDiagram,
   faSitemap,
+  faEdit,
 } from "@fortawesome/free-solid-svg-icons";
+import Swal from "sweetalert2";
+import ServerModal from "./ServerModal";
 import "./ServerStatusTable.css";
 
 const ServerStatusTable = () => {
@@ -36,9 +39,63 @@ const ServerStatusTable = () => {
   const [selectedType, setSelectedType] = useState("todos");
   const [verifyingServers, setVerifyingServers] = useState(new Set());
 
+  // Estados para modales
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingServer, setEditingServer] = useState(null);
+
   const API_BASE_URL = "http://localhost:3001/api";
 
-  // Función para obtener el ícono según el tipo - CORREGIDA
+  // Función para mostrar alertas de éxito
+  const showSuccessAlert = (title, message) => {
+    Swal.fire({
+      title: title,
+      text: message,
+      icon: "success",
+      confirmButtonColor: "#10b981",
+      confirmButtonText: "Aceptar",
+      background: "#1e293b",
+      color: "#f1f5f9",
+      iconColor: "#10b981",
+    });
+  };
+
+  // Función para mostrar alertas de error
+  const showErrorAlert = (title, message) => {
+    Swal.fire({
+      title: title,
+      text: message,
+      icon: "error",
+      confirmButtonColor: "#ef4444",
+      confirmButtonText: "Aceptar",
+      background: "#1e293b",
+      color: "#f1f5f9",
+      iconColor: "#ef4444",
+    });
+  };
+
+  // Función para mostrar confirmación
+  const showConfirmDialog = (
+    title,
+    text,
+    confirmButtonText = "Sí, eliminar"
+  ) => {
+    return Swal.fire({
+      title: title,
+      text: text,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: confirmButtonText,
+      cancelButtonText: "Cancelar",
+      background: "#1e293b",
+      color: "#f1f5f9",
+      iconColor: "#f59e0b",
+    });
+  };
+
+  // Función para obtener el ícono según el tipo
   const getTypeIcon = (tipo) => {
     switch (tipo?.toLowerCase()) {
       case "servidor":
@@ -106,6 +163,7 @@ const ServerStatusTable = () => {
     } catch (err) {
       console.error("Error:", err);
       setError(err.message);
+      showErrorAlert("Error", "No se pudieron cargar los servidores");
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +194,18 @@ const ServerStatusTable = () => {
     try {
       setVerifyingServers((prev) => new Set(prev.add(serverId)));
 
+      // Mostrar loading mientras se verifica
+      Swal.fire({
+        title: "Verificando servidor...",
+        text: "Por favor espere",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        background: "#1e293b",
+        color: "#f1f5f9",
+      });
+
       const response = await fetch(
         `${API_BASE_URL}/servidores/${serverId}/verificar`,
         { method: "POST" }
@@ -162,9 +232,14 @@ const ServerStatusTable = () => {
       );
 
       await loadStats();
+
+      // Cerrar loading y mostrar éxito
+      Swal.close();
+      showSuccessAlert("¡Éxito!", "Servidor verificado correctamente");
     } catch (error) {
       console.error("Error verificando servidor:", error);
-      alert("❌ Error al verificar el servidor");
+      Swal.close();
+      showErrorAlert("Error", "No se pudo verificar el servidor");
     } finally {
       setVerifyingServers((prev) => {
         const newSet = new Set(prev);
@@ -185,6 +260,18 @@ const ServerStatusTable = () => {
       setIsLoading(true);
       const serverIds = servers.map((server) => server.id);
       setVerifyingServers(new Set(serverIds));
+
+      // Mostrar loading mientras se verifican todos
+      Swal.fire({
+        title: "Verificando todos los servidores...",
+        text: "Esto puede tomar unos momentos",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        background: "#1e293b",
+        color: "#f1f5f9",
+      });
 
       const response = await fetch(
         `${API_BASE_URL}/servidores/verificar-todos`,
@@ -214,11 +301,18 @@ const ServerStatusTable = () => {
         );
 
         await loadStats();
-        alert("✅ Todos los servidores verificados correctamente");
+
+        // Cerrar loading y mostrar éxito
+        Swal.close();
+        showSuccessAlert(
+          "¡Éxito!",
+          "Todos los servidores fueron verificados correctamente"
+        );
       }
     } catch (error) {
       console.error("Error verificando todos los servidores:", error);
-      alert("❌ Error al verificar los servidores");
+      Swal.close();
+      showErrorAlert("Error", "No se pudieron verificar los servidores");
     } finally {
       setIsLoading(false);
       setVerifyingServers(new Set());
@@ -226,51 +320,57 @@ const ServerStatusTable = () => {
   };
 
   // Agregar nuevo servidor
-  const addServer = async (event) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
+  const handleAddServer = async (formData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/servidores`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        await loadAllData();
+        showSuccessAlert(
+          "¡Servidor agregado!",
+          "El servidor ha sido agregado correctamente"
+        );
+      } else {
+        throw new Error("Error en la respuesta del servidor");
+      }
+    } catch (error) {
+      console.error("Error agregando servidor:", error);
+      showErrorAlert("Error", "No se pudo agregar el servidor");
     }
+  };
 
-    const ip = prompt("Ingrese la IP del nuevo servidor:");
-    if (!ip) return;
-
-    const sucursal = prompt("Ingrese la sucursal:");
-    if (!sucursal) return;
-
-    const nombre = prompt("Ingrese el nombre del equipo:") || `Equipo ${ip}`;
-
-    const tipo =
-      prompt(
-        "Ingrese el tipo (servidor, switch, router, firewall, database):",
-        "servidor"
-      ) || "servidor";
-
-    if (ip && sucursal) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/servidores`, {
-          method: "POST",
+  // Editar servidor
+  const handleEditServer = async (formData) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/servidores/${editingServer.id}`,
+        {
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            ip,
-            sucursal,
-            nombre,
-            tipo: tipo.toLowerCase(),
-          }),
-        });
-
-        if (response.ok) {
-          await loadAllData();
-          alert("✅ Servidor agregado correctamente");
-        } else {
-          throw new Error("Error en la respuesta del servidor");
+          body: JSON.stringify(formData),
         }
-      } catch (error) {
-        console.error("Error agregando servidor:", error);
-        alert("❌ Error al agregar servidor");
+      );
+
+      if (response.ok) {
+        await loadAllData();
+        showSuccessAlert(
+          "¡Servidor actualizado!",
+          "El servidor ha sido actualizado correctamente"
+        );
+      } else {
+        throw new Error("Error en la respuesta del servidor");
       }
+    } catch (error) {
+      console.error("Error actualizando servidor:", error);
+      showErrorAlert("Error", "No se pudo actualizar el servidor");
     }
   };
 
@@ -281,23 +381,56 @@ const ServerStatusTable = () => {
       event.stopPropagation();
     }
 
-    if (window.confirm(`¿Está seguro de eliminar el servidor ${serverIp}?`)) {
+    const result = await showConfirmDialog(
+      "¿Está seguro?",
+      `Esta acción eliminará el servidor ${serverIp}. Esta acción no se puede deshacer.`,
+      "Sí, eliminar"
+    );
+
+    if (result.isConfirmed) {
       try {
+        // Mostrar loading mientras se elimina
+        Swal.fire({
+          title: "Eliminando servidor...",
+          text: "Por favor espere",
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+          background: "#1e293b",
+          color: "#f1f5f9",
+        });
+
         const response = await fetch(`${API_BASE_URL}/servidores/${serverId}`, {
           method: "DELETE",
         });
 
         if (response.ok) {
           await loadAllData();
-          alert("✅ Servidor eliminado correctamente");
+          Swal.close();
+          showSuccessAlert(
+            "¡Eliminado!",
+            "El servidor ha sido eliminado correctamente"
+          );
         } else {
           throw new Error("Error en la respuesta del servidor");
         }
       } catch (error) {
         console.error("Error eliminando servidor:", error);
-        alert("❌ Error al eliminar servidor");
+        Swal.close();
+        showErrorAlert("Error", "No se pudo eliminar el servidor");
       }
     }
+  };
+
+  // Abrir modal de edición
+  const openEditModal = (server, event) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    setEditingServer(server);
+    setShowEditModal(true);
   };
 
   // Manejar cambio de búsqueda
@@ -367,6 +500,24 @@ const ServerStatusTable = () => {
 
   return (
     <div className="server-monitor-container">
+      {/* Modales */}
+      <ServerModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddServer}
+        title="Agregar Nuevo Servidor"
+        isEditing={false}
+      />
+
+      <ServerModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSubmit={handleEditServer}
+        title="Editar Servidor"
+        serverData={editingServer}
+        isEditing={true}
+      />
+
       <header className="server-monitor-header">
         <div className="server-monitor-title">
           <h1>
@@ -377,7 +528,7 @@ const ServerStatusTable = () => {
         <div className="server-monitor-controls">
           <button
             className="server-monitor-btn server-monitor-btn-primary"
-            onClick={addServer}
+            onClick={() => setShowAddModal(true)}
           >
             <FontAwesomeIcon icon={faPlus} /> Agregar Servidor
           </button>
@@ -617,6 +768,13 @@ const ServerStatusTable = () => {
                             <FontAwesomeIcon icon={faEye} /> Verificar
                           </>
                         )}
+                      </button>
+                      <button
+                        className="server-monitor-btn server-monitor-btn-warning"
+                        onClick={(e) => openEditModal(server, e)}
+                        title="Editar servidor"
+                      >
+                        <FontAwesomeIcon icon={faEdit} /> Editar
                       </button>
                       <button
                         className="server-monitor-btn server-monitor-btn-danger"
