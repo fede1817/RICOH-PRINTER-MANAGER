@@ -44,9 +44,9 @@ const ServerStatusTable = () => {
       case "servidor":
         return faServer;
       case "switch":
-        return faProjectDiagram; // Usando faProjectDiagram en lugar de faNetworkWired
+        return faProjectDiagram;
       case "router":
-        return faWifi; // Usando faWifi para routers
+        return faWifi;
       case "firewall":
         return faShieldAlt;
       case "database":
@@ -353,9 +353,9 @@ const ServerStatusTable = () => {
 
   if (isLoading && servers.length === 0) {
     return (
-      <div className="server-status-container">
-        <div className="loading-container">
-          <div className="spinner"></div>
+      <div className="server-monitor-container">
+        <div className="server-monitor-loading">
+          <div className="server-monitor-spinner"></div>
           <p>
             <FontAwesomeIcon icon={faCog} spin /> Cargando información de
             servidores...
@@ -366,20 +366,23 @@ const ServerStatusTable = () => {
   }
 
   return (
-    <div className="server-status-container">
-      <header>
-        <div className="header-title">
+    <div className="server-monitor-container">
+      <header className="server-monitor-header">
+        <div className="server-monitor-title">
           <h1>
             <FontAwesomeIcon icon={faServer} /> Monitor de Estado de Servidores
           </h1>
           <p>Sistema de verificación en tiempo real del estado de la red</p>
         </div>
-        <div className="controls">
-          <button className="btn btn-primary" onClick={addServer}>
+        <div className="server-monitor-controls">
+          <button
+            className="server-monitor-btn server-monitor-btn-primary"
+            onClick={addServer}
+          >
             <FontAwesomeIcon icon={faPlus} /> Agregar Servidor
           </button>
           <button
-            className="btn btn-success"
+            className="server-monitor-btn server-monitor-btn-success"
             onClick={verifyAllServers}
             disabled={isLoading || servers.length === 0}
           >
@@ -397,38 +400,44 @@ const ServerStatusTable = () => {
       </header>
 
       {error && (
-        <div className="error-message">
+        <div className="server-monitor-error">
           <FontAwesomeIcon icon={faExclamationTriangle} /> Error: {error}
-          <button onClick={loadAllData} className="btn-retry">
+          <button onClick={loadAllData} className="server-monitor-retry">
             Reintentar
           </button>
         </div>
       )}
 
       {stats && (
-        <div className="stats">
-          <div className="stats-grid">
-            <div className="stat-card">
-              <span className="stat-number">{stats.total}</span>
-              <span className="stat-label">
+        <div className="server-monitor-stats">
+          <div className="server-monitor-stats-grid">
+            <div className="server-monitor-stat">
+              <span className="server-monitor-stat-number">{stats.total}</span>
+              <span className="server-monitor-stat-label">
                 <FontAwesomeIcon icon={faServer} /> Total Equipos
               </span>
             </div>
-            <div className="stat-card active">
-              <span className="stat-number">{stats.activos}</span>
-              <span className="stat-label">
+            <div className="server-monitor-stat server-monitor-stat-active">
+              <span className="server-monitor-stat-number">
+                {stats.activos}
+              </span>
+              <span className="server-monitor-stat-label">
                 <FontAwesomeIcon icon={faCheckCircle} /> Activos
               </span>
             </div>
-            <div className="stat-card inactive">
-              <span className="stat-number">{stats.inactivos}</span>
-              <span className="stat-label">
+            <div className="server-monitor-stat server-monitor-stat-inactive">
+              <span className="server-monitor-stat-number">
+                {stats.inactivos}
+              </span>
+              <span className="server-monitor-stat-label">
                 <FontAwesomeIcon icon={faTimesCircle} /> Inactivos
               </span>
             </div>
-            <div className="stat-card health">
-              <span className="stat-number">{stats.porcentajeSalud}%</span>
-              <span className="stat-label">
+            <div className="server-monitor-stat server-monitor-stat-health">
+              <span className="server-monitor-stat-number">
+                {stats.porcentajeSalud}%
+              </span>
+              <span className="server-monitor-stat-label">
                 <FontAwesomeIcon icon={faSignal} /> Salud de Red
               </span>
             </div>
@@ -437,20 +446,23 @@ const ServerStatusTable = () => {
       )}
 
       {/* Filtros Mejorados */}
-      <div className="filters-container">
-        <div className="search-box-enhanced">
-          <div className="search-input-wrapper">
-            <FontAwesomeIcon icon={faSearch} className="search-icon" />
+      <div className="server-monitor-filters">
+        <div className="server-monitor-search">
+          <div className="server-monitor-search-wrapper">
+            <FontAwesomeIcon
+              icon={faSearch}
+              className="server-monitor-search-icon"
+            />
             <input
               type="text"
               placeholder="Buscar por IP, sucursal, nombre o tipo..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="search-input"
+              className="server-monitor-search-input"
             />
             {searchTerm && (
               <button
-                className="clear-search"
+                className="server-monitor-clear-search"
                 onClick={clearSearch}
                 title="Limpiar búsqueda"
               >
@@ -460,13 +472,16 @@ const ServerStatusTable = () => {
           </div>
         </div>
 
-        <div className="filter-group">
-          <div className="type-filter">
-            <FontAwesomeIcon icon={faFilter} className="filter-icon" />
+        <div className="server-monitor-filter-group">
+          <div className="server-monitor-type-filter">
+            <FontAwesomeIcon
+              icon={faFilter}
+              className="server-monitor-filter-icon"
+            />
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="type-select"
+              className="server-monitor-type-select"
             >
               <option value="todos">Todos los tipos</option>
               <option value="servidor">Servidores</option>
@@ -477,7 +492,7 @@ const ServerStatusTable = () => {
             </select>
             {selectedType !== "todos" && (
               <button
-                className="clear-filter"
+                className="server-monitor-clear-filter"
                 onClick={clearTypeFilter}
                 title="Limpiar filtro"
               >
@@ -486,8 +501,8 @@ const ServerStatusTable = () => {
             )}
           </div>
 
-          <div className="filter-info">
-            <span className="filter-badge">
+          <div className="server-monitor-filter-info">
+            <span className="server-monitor-filter-badge">
               {selectedType !== "todos" && `Tipo: ${selectedType}`}
               {searchTerm && ` • Búsqueda: "${searchTerm}"`}
             </span>
@@ -495,8 +510,8 @@ const ServerStatusTable = () => {
         </div>
       </div>
 
-      <div className="table-responsive">
-        <table className="server-table">
+      <div className="server-monitor-table-container">
+        <table className="server-monitor-table">
           <thead>
             <tr>
               <th>IP</th>
@@ -514,28 +529,30 @@ const ServerStatusTable = () => {
               filteredServers.map((server) => (
                 <tr
                   key={server.id}
-                  className={`${server.estado} ${
-                    verifyingServers.has(server.id) ? "verifying" : ""
+                  className={`server-monitor-${server.estado} ${
+                    verifyingServers.has(server.id)
+                      ? "server-monitor-verifying"
+                      : ""
                   }`}
                 >
                   <td>
-                    <span className="ip-address">
+                    <span className="server-monitor-ip">
                       <FontAwesomeIcon icon={faDesktop} /> {server.ip}
                     </span>
                   </td>
                   <td>
-                    <span className="sucursal-name">
+                    <span className="server-monitor-sucursal">
                       <FontAwesomeIcon icon={faBuilding} /> {server.sucursal}
                     </span>
                   </td>
                   <td>
-                    <span className="server-name">
+                    <span className="server-monitor-name">
                       {server.nombre || "Sin nombre"}
                     </span>
                   </td>
                   <td>
                     <span
-                      className="type-badge"
+                      className="server-monitor-type-badge"
                       style={{
                         borderColor: getTypeColor(server.tipo),
                         backgroundColor: `${getTypeColor(server.tipo)}20`,
@@ -549,7 +566,9 @@ const ServerStatusTable = () => {
                     </span>
                   </td>
                   <td>
-                    <span className={`status-badge ${server.estado}`}>
+                    <span
+                      className={`server-monitor-status server-monitor-status-${server.estado}`}
+                    >
                       <FontAwesomeIcon
                         icon={
                           server.estado === "activo"
@@ -561,13 +580,15 @@ const ServerStatusTable = () => {
                     </span>
                   </td>
                   <td>
-                    <span className={`latencia ${server.estado}`}>
+                    <span
+                      className={`server-monitor-latency server-monitor-latency-${server.estado}`}
+                    >
                       <FontAwesomeIcon icon={faSignal} />
                       {server.latencia || "N/A"}
                     </span>
                   </td>
                   <td>
-                    <span className="ultima-verificacion">
+                    <span className="server-monitor-last-check">
                       <FontAwesomeIcon icon={faClock} />
                       {server.ultima_verificacion
                         ? formatDate(server.ultima_verificacion)
@@ -575,9 +596,9 @@ const ServerStatusTable = () => {
                     </span>
                   </td>
                   <td>
-                    <div className="action-buttons">
+                    <div className="server-monitor-actions">
                       <button
-                        className="btn btn-info"
+                        className="server-monitor-btn server-monitor-btn-info"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -598,7 +619,7 @@ const ServerStatusTable = () => {
                         )}
                       </button>
                       <button
-                        className="btn btn-danger"
+                        className="server-monitor-btn server-monitor-btn-danger"
                         onClick={(e) => deleteServer(server.id, server.ip, e)}
                         title="Eliminar servidor"
                       >
@@ -610,7 +631,7 @@ const ServerStatusTable = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="no-results">
+                <td colSpan="8" className="server-monitor-no-results">
                   <FontAwesomeIcon icon={faExclamationTriangle} />
                   No se encontraron servidores que coincidan con los filtros
                 </td>
@@ -620,7 +641,7 @@ const ServerStatusTable = () => {
         </table>
       </div>
 
-      <div className="table-footer">
+      <div className="server-monitor-footer">
         <p>
           Mostrando {filteredServers.length} de {servers.length} equipos
           {selectedType !== "todos" && ` • Filtrado por: ${selectedType}`}
