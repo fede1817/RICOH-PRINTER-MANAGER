@@ -24,9 +24,9 @@ import {
   faSatelliteDish,
   faProjectDiagram,
   faSitemap,
-  faEdit,
+  faEdit
 } from "@fortawesome/free-solid-svg-icons";
-import Swal from "sweetalert2";
+import Swal from 'sweetalert2';
 import ServerModal from "./ServerModal";
 import "./ServerStatusTable.css";
 
@@ -38,7 +38,7 @@ const ServerStatusTable = () => {
   const [stats, setStats] = useState(null);
   const [selectedType, setSelectedType] = useState("todos");
   const [verifyingServers, setVerifyingServers] = useState(new Set());
-
+  
   // Estados para modales
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -51,12 +51,12 @@ const ServerStatusTable = () => {
     Swal.fire({
       title: title,
       text: message,
-      icon: "success",
-      confirmButtonColor: "#10b981",
-      confirmButtonText: "Aceptar",
-      background: "#1e293b",
-      color: "#f1f5f9",
-      iconColor: "#10b981",
+      icon: 'success',
+      confirmButtonColor: '#10b981',
+      confirmButtonText: 'Aceptar',
+      background: '#1e293b',
+      color: '#f1f5f9',
+      iconColor: '#10b981'
     });
   };
 
@@ -65,33 +65,29 @@ const ServerStatusTable = () => {
     Swal.fire({
       title: title,
       text: message,
-      icon: "error",
-      confirmButtonColor: "#ef4444",
-      confirmButtonText: "Aceptar",
-      background: "#1e293b",
-      color: "#f1f5f9",
-      iconColor: "#ef4444",
+      icon: 'error',
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Aceptar',
+      background: '#1e293b',
+      color: '#f1f5f9',
+      iconColor: '#ef4444'
     });
   };
 
   // Función para mostrar confirmación
-  const showConfirmDialog = (
-    title,
-    text,
-    confirmButtonText = "Sí, eliminar"
-  ) => {
+  const showConfirmDialog = (title, text, confirmButtonText = 'Sí, eliminar') => {
     return Swal.fire({
       title: title,
       text: text,
-      icon: "warning",
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
       confirmButtonText: confirmButtonText,
-      cancelButtonText: "Cancelar",
-      background: "#1e293b",
-      color: "#f1f5f9",
-      iconColor: "#f59e0b",
+      cancelButtonText: 'Cancelar',
+      background: '#1e293b',
+      color: '#f1f5f9',
+      iconColor: '#f59e0b'
     });
   };
 
@@ -163,7 +159,7 @@ const ServerStatusTable = () => {
     } catch (err) {
       console.error("Error:", err);
       setError(err.message);
-      showErrorAlert("Error", "No se pudieron cargar los servidores");
+      showErrorAlert('Error', 'No se pudieron cargar los servidores');
     } finally {
       setIsLoading(false);
     }
@@ -196,14 +192,14 @@ const ServerStatusTable = () => {
 
       // Mostrar loading mientras se verifica
       Swal.fire({
-        title: "Verificando servidor...",
-        text: "Por favor espere",
+        title: 'Verificando servidor...',
+        text: 'Por favor espere',
         allowOutsideClick: false,
         didOpen: () => {
           Swal.showLoading();
         },
-        background: "#1e293b",
-        color: "#f1f5f9",
+        background: '#1e293b',
+        color: '#f1f5f9'
       });
 
       const response = await fetch(
@@ -232,14 +228,15 @@ const ServerStatusTable = () => {
       );
 
       await loadStats();
-
+      
       // Cerrar loading y mostrar éxito
       Swal.close();
-      showSuccessAlert("¡Éxito!", "Servidor verificado correctamente");
+      showSuccessAlert('¡Éxito!', 'Servidor verificado correctamente');
+
     } catch (error) {
       console.error("Error verificando servidor:", error);
       Swal.close();
-      showErrorAlert("Error", "No se pudo verificar el servidor");
+      showErrorAlert('Error', 'No se pudo verificar el servidor');
     } finally {
       setVerifyingServers((prev) => {
         const newSet = new Set(prev);
@@ -263,14 +260,14 @@ const ServerStatusTable = () => {
 
       // Mostrar loading mientras se verifican todos
       Swal.fire({
-        title: "Verificando todos los servidores...",
-        text: "Esto puede tomar unos momentos",
+        title: 'Verificando todos los servidores...',
+        text: 'Esto puede tomar unos momentos',
         allowOutsideClick: false,
         didOpen: () => {
           Swal.showLoading();
         },
-        background: "#1e293b",
-        color: "#f1f5f9",
+        background: '#1e293b',
+        color: '#f1f5f9'
       });
 
       const response = await fetch(
@@ -301,18 +298,15 @@ const ServerStatusTable = () => {
         );
 
         await loadStats();
-
+        
         // Cerrar loading y mostrar éxito
         Swal.close();
-        showSuccessAlert(
-          "¡Éxito!",
-          "Todos los servidores fueron verificados correctamente"
-        );
+        showSuccessAlert('¡Éxito!', 'Todos los servidores fueron verificados correctamente');
       }
     } catch (error) {
       console.error("Error verificando todos los servidores:", error);
       Swal.close();
-      showErrorAlert("Error", "No se pudieron verificar los servidores");
+      showErrorAlert('Error', 'No se pudieron verificar los servidores');
     } finally {
       setIsLoading(false);
       setVerifyingServers(new Set());
@@ -332,45 +326,36 @@ const ServerStatusTable = () => {
 
       if (response.ok) {
         await loadAllData();
-        showSuccessAlert(
-          "¡Servidor agregado!",
-          "El servidor ha sido agregado correctamente"
-        );
+        showSuccessAlert('¡Servidor agregado!', 'El servidor ha sido agregado correctamente');
       } else {
         throw new Error("Error en la respuesta del servidor");
       }
     } catch (error) {
       console.error("Error agregando servidor:", error);
-      showErrorAlert("Error", "No se pudo agregar el servidor");
+      showErrorAlert('Error', 'No se pudo agregar el servidor');
     }
   };
 
   // Editar servidor
   const handleEditServer = async (formData) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/servidores/${editingServer.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/servidores/${editingServer.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
       if (response.ok) {
         await loadAllData();
-        showSuccessAlert(
-          "¡Servidor actualizado!",
-          "El servidor ha sido actualizado correctamente"
-        );
+        showSuccessAlert('¡Servidor actualizado!', 'El servidor ha sido actualizado correctamente');
       } else {
         throw new Error("Error en la respuesta del servidor");
       }
     } catch (error) {
       console.error("Error actualizando servidor:", error);
-      showErrorAlert("Error", "No se pudo actualizar el servidor");
+      showErrorAlert('Error', 'No se pudo actualizar el servidor');
     }
   };
 
@@ -382,23 +367,23 @@ const ServerStatusTable = () => {
     }
 
     const result = await showConfirmDialog(
-      "¿Está seguro?",
+      '¿Está seguro?',
       `Esta acción eliminará el servidor ${serverIp}. Esta acción no se puede deshacer.`,
-      "Sí, eliminar"
+      'Sí, eliminar'
     );
 
     if (result.isConfirmed) {
       try {
         // Mostrar loading mientras se elimina
         Swal.fire({
-          title: "Eliminando servidor...",
-          text: "Por favor espere",
+          title: 'Eliminando servidor...',
+          text: 'Por favor espere',
           allowOutsideClick: false,
           didOpen: () => {
             Swal.showLoading();
           },
-          background: "#1e293b",
-          color: "#f1f5f9",
+          background: '#1e293b',
+          color: '#f1f5f9'
         });
 
         const response = await fetch(`${API_BASE_URL}/servidores/${serverId}`, {
@@ -408,17 +393,14 @@ const ServerStatusTable = () => {
         if (response.ok) {
           await loadAllData();
           Swal.close();
-          showSuccessAlert(
-            "¡Eliminado!",
-            "El servidor ha sido eliminado correctamente"
-          );
+          showSuccessAlert('¡Eliminado!', 'El servidor ha sido eliminado correctamente');
         } else {
           throw new Error("Error en la respuesta del servidor");
         }
       } catch (error) {
         console.error("Error eliminando servidor:", error);
         Swal.close();
-        showErrorAlert("Error", "No se pudo eliminar el servidor");
+        showErrorAlert('Error', 'No se pudo eliminar el servidor');
       }
     }
   };
@@ -526,8 +508,8 @@ const ServerStatusTable = () => {
           <p>Sistema de verificación en tiempo real del estado de la red</p>
         </div>
         <div className="server-monitor-controls">
-          <button
-            className="server-monitor-btn server-monitor-btn-primary"
+          <button 
+            className="server-monitor-btn server-monitor-btn-primary" 
             onClick={() => setShowAddModal(true)}
           >
             <FontAwesomeIcon icon={faPlus} /> Agregar Servidor
@@ -569,25 +551,19 @@ const ServerStatusTable = () => {
               </span>
             </div>
             <div className="server-monitor-stat server-monitor-stat-active">
-              <span className="server-monitor-stat-number">
-                {stats.activos}
-              </span>
+              <span className="server-monitor-stat-number">{stats.activos}</span>
               <span className="server-monitor-stat-label">
                 <FontAwesomeIcon icon={faCheckCircle} /> Activos
               </span>
             </div>
             <div className="server-monitor-stat server-monitor-stat-inactive">
-              <span className="server-monitor-stat-number">
-                {stats.inactivos}
-              </span>
+              <span className="server-monitor-stat-number">{stats.inactivos}</span>
               <span className="server-monitor-stat-label">
                 <FontAwesomeIcon icon={faTimesCircle} /> Inactivos
               </span>
             </div>
             <div className="server-monitor-stat server-monitor-stat-health">
-              <span className="server-monitor-stat-number">
-                {stats.porcentajeSalud}%
-              </span>
+              <span className="server-monitor-stat-number">{stats.porcentajeSalud}%</span>
               <span className="server-monitor-stat-label">
                 <FontAwesomeIcon icon={faSignal} /> Salud de Red
               </span>
@@ -600,10 +576,7 @@ const ServerStatusTable = () => {
       <div className="server-monitor-filters">
         <div className="server-monitor-search">
           <div className="server-monitor-search-wrapper">
-            <FontAwesomeIcon
-              icon={faSearch}
-              className="server-monitor-search-icon"
-            />
+            <FontAwesomeIcon icon={faSearch} className="server-monitor-search-icon" />
             <input
               type="text"
               placeholder="Buscar por IP, sucursal, nombre o tipo..."
@@ -625,10 +598,7 @@ const ServerStatusTable = () => {
 
         <div className="server-monitor-filter-group">
           <div className="server-monitor-type-filter">
-            <FontAwesomeIcon
-              icon={faFilter}
-              className="server-monitor-filter-icon"
-            />
+            <FontAwesomeIcon icon={faFilter} className="server-monitor-filter-icon" />
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
@@ -681,9 +651,7 @@ const ServerStatusTable = () => {
                 <tr
                   key={server.id}
                   className={`server-monitor-${server.estado} ${
-                    verifyingServers.has(server.id)
-                      ? "server-monitor-verifying"
-                      : ""
+                    verifyingServers.has(server.id) ? "server-monitor-verifying" : ""
                   }`}
                 >
                   <td>
@@ -717,9 +685,7 @@ const ServerStatusTable = () => {
                     </span>
                   </td>
                   <td>
-                    <span
-                      className={`server-monitor-status server-monitor-status-${server.estado}`}
-                    >
+                    <span className={`server-monitor-status server-monitor-status-${server.estado}`}>
                       <FontAwesomeIcon
                         icon={
                           server.estado === "activo"
@@ -731,9 +697,7 @@ const ServerStatusTable = () => {
                     </span>
                   </td>
                   <td>
-                    <span
-                      className={`server-monitor-latency server-monitor-latency-${server.estado}`}
-                    >
+                    <span className={`server-monitor-latency server-monitor-latency-${server.estado}`}>
                       <FontAwesomeIcon icon={faSignal} />
                       {server.latencia || "N/A"}
                     </span>
@@ -749,7 +713,7 @@ const ServerStatusTable = () => {
                   <td>
                     <div className="server-monitor-actions">
                       <button
-                        className="server-monitor-btn server-monitor-btn-info"
+                        className="server-monitor-action-btn server-monitor-action-verify"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -759,29 +723,24 @@ const ServerStatusTable = () => {
                         disabled={verifyingServers.has(server.id)}
                       >
                         {verifyingServers.has(server.id) ? (
-                          <>
-                            <FontAwesomeIcon icon={faSpinner} spin />{" "}
-                            Verificando...
-                          </>
+                          <FontAwesomeIcon icon={faSpinner} spin />
                         ) : (
-                          <>
-                            <FontAwesomeIcon icon={faEye} /> Verificar
-                          </>
+                          <FontAwesomeIcon icon={faEye} />
                         )}
                       </button>
                       <button
-                        className="server-monitor-btn server-monitor-btn-warning"
+                        className="server-monitor-action-btn server-monitor-action-edit"
                         onClick={(e) => openEditModal(server, e)}
                         title="Editar servidor"
                       >
-                        <FontAwesomeIcon icon={faEdit} /> Editar
+                        <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button
-                        className="server-monitor-btn server-monitor-btn-danger"
+                        className="server-monitor-action-btn server-monitor-action-delete"
                         onClick={(e) => deleteServer(server.id, server.ip, e)}
                         title="Eliminar servidor"
                       >
-                        <FontAwesomeIcon icon={faTrash} /> Eliminar
+                        <FontAwesomeIcon icon={faTrash} />
                       </button>
                     </div>
                   </td>

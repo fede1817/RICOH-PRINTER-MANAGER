@@ -828,3 +828,169 @@
 .swal2-loader {
   border-color: #3498db transparent #3498db transparent !important;
 }
+
+/* Botones de acción como iconos */
+.server-monitor-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+
+.server-monitor-action-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  position: relative;
+}
+
+.server-monitor-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.server-monitor-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Botón de verificar */
+.server-monitor-action-verify {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: white;
+  border: 1px solid #17a2b8;
+}
+
+.server-monitor-action-verify:hover:not(:disabled) {
+  background: linear-gradient(135deg, #138496, #117a8b);
+}
+
+/* Botón de editar */
+.server-monitor-action-edit {
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: white;
+  border: 1px solid #f39c12;
+}
+
+.server-monitor-action-edit:hover {
+  background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+/* Botón de eliminar */
+.server-monitor-action-delete {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  border: 1px solid #e74c3c;
+}
+
+.server-monitor-action-delete:hover {
+  background: linear-gradient(135deg, #c0392b, #a93226);
+}
+
+/* Tooltips para los botones */
+.server-monitor-action-btn::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #334155;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.server-monitor-action-btn:hover::after {
+  opacity: 1;
+  visibility: visible;
+  bottom: -35px;
+}
+
+/* Responsive para botones de acción */
+@media (max-width: 768px) {
+  .server-monitor-actions {
+    gap: 4px;
+  }
+  
+  .server-monitor-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+  
+  .server-monitor-action-btn::after {
+    font-size: 11px;
+    padding: 4px 8px;
+    bottom: -35px;
+  }
+  
+  .server-monitor-action-btn:hover::after {
+    bottom: -30px;
+  }
+}
+
+/* Asegurar que la columna de acciones tenga un ancho fijo */
+.server-monitor-table th:nth-child(8),
+.server-monitor-table td:nth-child(8) {
+  width: 140px;
+  min-width: 140px;
+  text-align: center;
+}
+
+/* Botones principales (Agregar, Verificar Todos) mantienen texto */
+.server-monitor-controls .server-monitor-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #475569;
+}
+
+.server-monitor-controls .server-monitor-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.server-monitor-btn-primary {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+}
+
+.server-monitor-btn-success {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: white;
+}
+
+.server-monitor-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.server-monitor-btn:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
