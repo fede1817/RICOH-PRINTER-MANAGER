@@ -599,6 +599,8 @@ const ClientData = ({
           icon: 'success',
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#3b82f6',
+          background: "#1f2937",
+      color: "#fff",
           timer: 3000,
           timerProgressBar: true
         });
@@ -614,6 +616,8 @@ const ClientData = ({
           title: 'Error',
           text: `Error ${response.status}: ${errorText || 'Error del servidor'}`,
           icon: 'error',
+          background: "#1f2937",
+      color: "#fff",
           confirmButtonText: 'Entendido',
           confirmButtonColor: '#ef4444'
         });
@@ -628,6 +632,8 @@ const ClientData = ({
         title: 'Error de conexión',
         text: error.message,
         icon: 'error',
+        background: "#1f2937",
+      color: "#fff",
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#ef4444'
       });
