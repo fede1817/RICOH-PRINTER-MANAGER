@@ -70,6 +70,7 @@ const PedidosSection = ({urls}) => {
   ];
 
   const sucursales = [
+    'CENT',
     "CDE",
     "ENC",
     "CAAG",
@@ -80,30 +81,30 @@ const PedidosSection = ({urls}) => {
   ];
 
   // 🔥 MAPEO COMPLETO DE MODELOS DE IMPRESORA A TONERS
-  const modelosYToners = {
+const modelosYToners = {
   "HP LaserJet Pro MFP M135w": {
     modelos: ["HP LaserJet Pro MFP M135w"],
-    toner: "HP 150A (W1500A)",  
+    toner: "HP 150A (W1500A)",
     tipo: "Blanco y negro"
   },
   "HP LaserJet P1102w": {
     modelos: ["HP LaserJet P1102w"],
-    toner: "HP 85A (CE285A)",  
+    toner: "HP 85A (CE285A)",
     tipo: "Blanco y negro"
   },
   "HP LaserJet M111w": {
     modelos: ["HP LaserJet M111w"],
-    toner: "HP 150A (W1500A)",  // corregido
+    toner: "HP 150A (W1500A)",
     tipo: "Blanco y negro"
   },
   "HP LaserJet Pro M107w": {
     modelos: ["HP LaserJet Pro M107w"],
-    toner: "HP 107A (W2070X)",
+    toner: "HP 107A (W2070A)",
     tipo: "Blanco y negro"
   },
   "HP LaserJet Pro MFP M201": {
     modelos: ["HP LaserJet Pro MFP M201", "HP LaserJet Pro M201"],
-    toner: "HP 83A (CF283A)",  // confirmado para M201/M201dw etc :contentReference[oaicite:0]{index=0}
+    toner: "HP 83A (CF283A)",
     tipo: "Blanco y negro"
   },
   "HP DESKJET INK ADVANTAGE 3775": {
@@ -113,11 +114,11 @@ const PedidosSection = ({urls}) => {
   },
   "HP LaserJet Pro M203": {
     modelos: ["HP LaserJet Pro M203"],
-    toner: "HP 83A (CF283A)",  // M203 también usa 83A en algunos casos
+    toner: "HP 83A (CF283A)",
     tipo: "Blanco y negro"
   },
   "HP LaserJet Pl 102w": {
-    modelos: ["HP LaserJet P1102w", "HP LaserJet PL 102w"],  // ojo con el nombre, puede variar
+    modelos: ["HP LaserJet P1102w", "HP LaserJet PL 102w"],
     toner: "HP 85A (CE285A)",
     tipo: "Blanco y negro"
   },
@@ -128,17 +129,20 @@ const PedidosSection = ({urls}) => {
   },
   "HP DESKJET 2700": {
     modelos: ["HP DESKJET 2700"],
-    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    toner: "HP 664 (F6U19AL)",
     tipo: "Color"
   },
-  "HP LaserJet Pro M127fn": {
-    modelos: ["HP LaserJet Pro M127fn"],
-    toner: "HP 125A (CF125A)",
+
+  // 🔥 NUEVO — modelo que pediste
+  "HP LaserJet Pro M127FN": {
+    modelos: ["HP LaserJet Pro M127FN"],
+    toner: "HP 88A (CE288A)",
     tipo: "Blanco y negro"
   },
+
   "HP Deskjet Ink Advantage 2375": {
     modelos: ["HP Deskjet Ink Advantage 2375"],
-    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    toner: "HP 664 (F6U19AL)",
     tipo: "Color"
   },
   "HP LaserJet Pro M203dw": {
@@ -148,20 +152,34 @@ const PedidosSection = ({urls}) => {
   },
   "HP DeskJet 2775": {
     modelos: ["HP DeskJet 2775"],
-    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    toner: "HP 664 (F6U19AL)",
     tipo: "Color"
   },
   "HP LaserJet Pro M102w": {
     modelos: ["HP LaserJet Pro M102w"],
-    toner: "HP 107A (W2070X)",  // verificar según manuales, puede variar
+    toner: "HP 17A (CF217A)", // CORREGIDO
     tipo: "Blanco y negro"
   },
   "HP LaserJet Pro M201dw": {
     modelos: ["HP LaserJet Pro M201dw"],
     toner: "HP 83A (CF283A)",
     tipo: "Blanco y negro"
+  },
+
+  // 🔥 NUEVO — HP DeskJet Ink Advantage 3635
+  "HP DeskJet Ink Advantage 3635": {
+    modelos: ["HP DeskJet Ink Advantage 3635"],
+    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    tipo: "Color"
+  },
+  "HP LaserJet M111a": {
+    modelos: ["HP LaserJet M111a"],
+    toner: "HP 105A",
+    tipo: "Blanco y negro"
   }
 };
+
+
 
 
   // 🔥 FUNCIÓN PARA OBTENER INFORMACIÓN DEL TONER SEGÚN EL MODELO
@@ -182,6 +200,9 @@ const PedidosSection = ({urls}) => {
 
   // Objeto que mapea cada sucursal con sus modelos de impresora (actualizado con los modelos correctos)
   const modelosPorSucursal = {
+    "CENT": [
+      "HP LaserJet M111a",
+    ],
     "CDE": [
       "HP LaserJet Pro MFP M135w",
       "HP LaserJet P1102w",
@@ -200,7 +221,7 @@ const PedidosSection = ({urls}) => {
       "HP LaserJet P1102w",
       "HP DESKJET 2130",
       "HP DESKJET 2700",
-      "HP LaserJet Pro m127FN"
+      "HP LaserJet Pro M127FN"
     ],
     "SANT": [
       "HP LaserJet Pro M107w",

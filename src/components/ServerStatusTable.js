@@ -16,6 +16,14 @@ import {
   faCog,
   faSpinner,
   faDesktop,
+  faNetworkWired,
+  faShieldAlt,
+  faFilter,
+  faDatabase,
+  faWifi,
+  faSatelliteDish,
+  faProjectDiagram,
+  faSitemap,
 } from "@fortawesome/free-solid-svg-icons";
 import "./ServerStatusTable.css";
 
@@ -26,9 +34,45 @@ const ServerStatusTable = () => {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
   const [selectedType, setSelectedType] = useState("todos");
-  const [verifyingServers, setVerifyingSs] = useState(new Set());
+  const [verifyingServers, setVerifyingServers] = useState(new Set());
 
   const API_BASE_URL = "http://localhost:3001/api";
+
+  // Función para obtener el ícono según el tipo - CORREGIDA
+  const getTypeIcon = (tipo) => {
+    switch (tipo?.toLowerCase()) {
+      case "servidor":
+        return faServer;
+      case "switch":
+        return faProjectDiagram; // Usando faProjectDiagram en lugar de faNetworkWired
+      case "router":
+        return faWifi; // Usando faWifi para routers
+      case "firewall":
+        return faShieldAlt;
+      case "database":
+        return faDatabase;
+      default:
+        return faDesktop;
+    }
+  };
+
+  // Función para obtener el color según el tipo
+  const getTypeColor = (tipo) => {
+    switch (tipo?.toLowerCase()) {
+      case "servidor":
+        return "#3498db";
+      case "switch":
+        return "#9b59b6";
+      case "router":
+        return "#e67e22";
+      case "firewall":
+        return "#e74c3c";
+      case "database":
+        return "#2ecc71";
+      default:
+        return "#95a5a6";
+    }
+  };
 
   // Función para formatear fechas de manera segura
   const formatDate = (dateString) => {
@@ -36,17 +80,9 @@ const ServerStatusTable = () => {
 
     try {
       const date = new Date(dateString);
-
-      // Verificar si la fecha es válida
       if (isNaN(date.getTime())) {
-        // Si no es válida, intentar parsear formatos comunes
-        const timestamp = Date.parse(dateString);
-        if (!isNaN(timestamp)) {
-          return new Date(timestamp).toLocaleString("es-ES");
-        }
         return "Fecha inválida";
       }
-
       return date.toLocaleString("es-ES");
     } catch (error) {
       console.error("Error formateando fecha:", error, dateString);
@@ -93,9 +129,13 @@ const ServerStatusTable = () => {
     }
   };
 
-  // Verificar estado de un servidor - CORREGIDO
+  // Verificar estado de un servidor
   const verifyServer = async (serverId) => {
+    if (verifyingServers.has(serverId)) return;
+
     try {
+      setVerifyingServers((prev) => new Set(prev.add(serverId)));
+
       const response = await fetch(
         `${API_BASE_URL}/servidores/${serverId}/verificar`,
         { method: "POST" }
@@ -107,7 +147,7 @@ const ServerStatusTable = () => {
 
       const result = await response.json();
 
-      // 🔹 Actualizar solo el servidor verificado
+      // Actualizar solo el servidor verificado
       setServers((prevServers) =>
         prevServers.map((server) =>
           server.id === serverId
@@ -115,41 +155,26 @@ const ServerStatusTable = () => {
                 ...server,
                 estado: result.estado,
                 latencia: result.latencia,
-                ultima_verificacion: normalizeDate(result.timestamp),
+                ultima_verificacion: new Date().toISOString(),
               }
             : server
         )
       );
 
-      return result;
+      await loadStats();
     } catch (error) {
       console.error("Error verificando servidor:", error);
+      alert("❌ Error al verificar el servidor");
+    } finally {
+      setVerifyingServers((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(serverId);
+        return newSet;
+      });
     }
   };
 
-  const normalizeDate = (ts) => {
-    if (!ts) return null;
-
-    // Si es número en segundos
-    if (typeof ts === "number") {
-      return new Date(ts * 1000).toISOString();
-    }
-
-    // Si es string de número
-    if (/^\d+$/.test(ts)) {
-      return new Date(parseInt(ts, 10) * 1000).toISOString();
-    }
-
-    // Si ya es string ISO
-    if (!isNaN(Date.parse(ts))) {
-      return new Date(ts).toISOString();
-    }
-
-    // Si es un formato raro, lo ignoramos
-    return null;
-  };
-
-  // Verificar todos los servidores - CORREGIDO
+  // Verificar todos los servidores
   const verifyAllServers = async (event) => {
     if (event) {
       event.preventDefault();
@@ -158,6 +183,9 @@ const ServerStatusTable = () => {
 
     try {
       setIsLoading(true);
+      const serverIds = servers.map((server) => server.id);
+      setVerifyingServers(new Set(serverIds));
+
       const response = await fetch(
         `${API_BASE_URL}/servidores/verificar-todos`,
         {
@@ -171,7 +199,7 @@ const ServerStatusTable = () => {
 
         setServers((prevServers) =>
           prevServers.map((server) => {
-            const serverResult = result.resultados.find(
+            const serverResult = result.resultados?.find(
               (r) => r.id === server.id
             );
             return serverResult
@@ -179,19 +207,21 @@ const ServerStatusTable = () => {
                   ...server,
                   estado: serverResult.estado,
                   latencia: serverResult.latencia,
-                  ultima_verificacion: currentTimestamp, // Usar timestamp actual
+                  ultima_verificacion: currentTimestamp,
                 }
               : server;
           })
         );
 
         await loadStats();
+        alert("✅ Todos los servidores verificados correctamente");
       }
     } catch (error) {
       console.error("Error verificando todos los servidores:", error);
       alert("❌ Error al verificar los servidores");
     } finally {
       setIsLoading(false);
+      setVerifyingServers(new Set());
     }
   };
 
@@ -203,11 +233,18 @@ const ServerStatusTable = () => {
     }
 
     const ip = prompt("Ingrese la IP del nuevo servidor:");
+    if (!ip) return;
+
     const sucursal = prompt("Ingrese la sucursal:");
-    const nombre = prompt("Ingrese el nombre del equipo:");
-    const tipo = prompt(
-      "Ingrese el tipo (servidor, switch, router, firewall):"
-    );
+    if (!sucursal) return;
+
+    const nombre = prompt("Ingrese el nombre del equipo:") || `Equipo ${ip}`;
+
+    const tipo =
+      prompt(
+        "Ingrese el tipo (servidor, switch, router, firewall, database):",
+        "servidor"
+      ) || "servidor";
 
     if (ip && sucursal) {
       try {
@@ -219,15 +256,16 @@ const ServerStatusTable = () => {
           body: JSON.stringify({
             ip,
             sucursal,
-            nombre: nombre || `Equipo ${ip}`,
-            tipo: tipo || "servidor",
+            nombre,
+            tipo: tipo.toLowerCase(),
           }),
         });
 
         if (response.ok) {
-          await loadServers();
-          await loadStats();
+          await loadAllData();
           alert("✅ Servidor agregado correctamente");
+        } else {
+          throw new Error("Error en la respuesta del servidor");
         }
       } catch (error) {
         console.error("Error agregando servidor:", error);
@@ -250,9 +288,10 @@ const ServerStatusTable = () => {
         });
 
         if (response.ok) {
-          await loadServers();
-          await loadStats();
+          await loadAllData();
           alert("✅ Servidor eliminado correctamente");
+        } else {
+          throw new Error("Error en la respuesta del servidor");
         }
       } catch (error) {
         console.error("Error eliminando servidor:", error);
@@ -275,6 +314,15 @@ const ServerStatusTable = () => {
     setSearchTerm("");
   };
 
+  // Limpiar filtro de tipo
+  const clearTypeFilter = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setSelectedType("todos");
+  };
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -284,7 +332,7 @@ const ServerStatusTable = () => {
     const interval = setInterval(() => {
       console.log("🔄 Actualización automática iniciada");
       loadAllData();
-    }, 5 * 60 * 100); // 5 minutos
+    }, 5 * 60 * 1000); // 5 minutos
 
     return () => clearInterval(interval);
   }, []);
@@ -292,17 +340,18 @@ const ServerStatusTable = () => {
   // Filtrar servidores
   const filteredServers = servers.filter((server) => {
     const matchesSearch =
-      server.ip.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      server.sucursal.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      server.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+      server.ip?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      server.sucursal?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      server.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      server.tipo?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesType =
-      selectedType === "todos" || server.tipo === selectedType;
+      selectedType === "todos" || server.tipo?.toLowerCase() === selectedType;
 
     return matchesSearch && matchesType;
   });
 
-  if (isLoading) {
+  if (isLoading && servers.length === 0) {
     return (
       <div className="server-status-container">
         <div className="loading-container">
@@ -329,8 +378,20 @@ const ServerStatusTable = () => {
           <button className="btn btn-primary" onClick={addServer}>
             <FontAwesomeIcon icon={faPlus} /> Agregar Servidor
           </button>
-          <button className="btn btn-success" onClick={verifyAllServers}>
-            <FontAwesomeIcon icon={faSync} /> Verificar Todos
+          <button
+            className="btn btn-success"
+            onClick={verifyAllServers}
+            disabled={isLoading || servers.length === 0}
+          >
+            {isLoading ? (
+              <>
+                <FontAwesomeIcon icon={faSpinner} spin /> Verificando...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faSync} /> Verificar Todos
+              </>
+            )}
           </button>
         </div>
       </header>
@@ -338,6 +399,9 @@ const ServerStatusTable = () => {
       {error && (
         <div className="error-message">
           <FontAwesomeIcon icon={faExclamationTriangle} /> Error: {error}
+          <button onClick={loadAllData} className="btn-retry">
+            Reintentar
+          </button>
         </div>
       )}
 
@@ -347,7 +411,7 @@ const ServerStatusTable = () => {
             <div className="stat-card">
               <span className="stat-number">{stats.total}</span>
               <span className="stat-label">
-                <FontAwesomeIcon icon={faServer} /> Total Servidores
+                <FontAwesomeIcon icon={faServer} /> Total Equipos
               </span>
             </div>
             <div className="stat-card active">
@@ -369,29 +433,65 @@ const ServerStatusTable = () => {
               </span>
             </div>
           </div>
-
-          {/* Estadísticas por tipo */}
         </div>
       )}
 
+      {/* Filtros Mejorados */}
       <div className="filters-container">
-        <div className="search-box">
-          <FontAwesomeIcon icon={faSearch} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Buscar por IP, sucursal o nombre..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-          {searchTerm && (
-            <button
-              className="clear-search"
-              onClick={clearSearch}
-              title="Limpiar búsqueda"
+        <div className="search-box-enhanced">
+          <div className="search-input-wrapper">
+            <FontAwesomeIcon icon={faSearch} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Buscar por IP, sucursal, nombre o tipo..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="search-input"
+            />
+            {searchTerm && (
+              <button
+                className="clear-search"
+                onClick={clearSearch}
+                title="Limpiar búsqueda"
+              >
+                <FontAwesomeIcon icon={faTimesCircle} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="filter-group">
+          <div className="type-filter">
+            <FontAwesomeIcon icon={faFilter} className="filter-icon" />
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="type-select"
             >
-              <FontAwesomeIcon icon={faTimesCircle} />
-            </button>
-          )}
+              <option value="todos">Todos los tipos</option>
+              <option value="servidor">Servidores</option>
+              <option value="switch">Switches</option>
+              <option value="router">Routers</option>
+              <option value="firewall">Firewalls</option>
+              <option value="database">Bases de datos</option>
+            </select>
+            {selectedType !== "todos" && (
+              <button
+                className="clear-filter"
+                onClick={clearTypeFilter}
+                title="Limpiar filtro"
+              >
+                <FontAwesomeIcon icon={faTimesCircle} />
+              </button>
+            )}
+          </div>
+
+          <div className="filter-info">
+            <span className="filter-badge">
+              {selectedType !== "todos" && `Tipo: ${selectedType}`}
+              {searchTerm && ` • Búsqueda: "${searchTerm}"`}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -401,6 +501,8 @@ const ServerStatusTable = () => {
             <tr>
               <th>IP</th>
               <th>Sucursal</th>
+              <th>Nombre</th>
+              <th>Tipo</th>
               <th>Estado</th>
               <th>Latencia</th>
               <th>Última Verificación</th>
@@ -410,7 +512,12 @@ const ServerStatusTable = () => {
           <tbody>
             {filteredServers.length > 0 ? (
               filteredServers.map((server) => (
-                <tr key={server.id} className={server.estado}>
+                <tr
+                  key={server.id}
+                  className={`${server.estado} ${
+                    verifyingServers.has(server.id) ? "verifying" : ""
+                  }`}
+                >
                   <td>
                     <span className="ip-address">
                       <FontAwesomeIcon icon={faDesktop} /> {server.ip}
@@ -419,6 +526,26 @@ const ServerStatusTable = () => {
                   <td>
                     <span className="sucursal-name">
                       <FontAwesomeIcon icon={faBuilding} /> {server.sucursal}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="server-name">
+                      {server.nombre || "Sin nombre"}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className="type-badge"
+                      style={{
+                        borderColor: getTypeColor(server.tipo),
+                        backgroundColor: `${getTypeColor(server.tipo)}20`,
+                      }}
+                    >
+                      <FontAwesomeIcon
+                        icon={getTypeIcon(server.tipo)}
+                        style={{ color: getTypeColor(server.tipo) }}
+                      />
+                      {server.tipo || "servidor"}
                     </span>
                   </td>
                   <td>
@@ -435,16 +562,15 @@ const ServerStatusTable = () => {
                   </td>
                   <td>
                     <span className={`latencia ${server.estado}`}>
-                      <FontAwesomeIcon icon={faSignal} /> {server.latencia}
+                      <FontAwesomeIcon icon={faSignal} />
+                      {server.latencia || "N/A"}
                     </span>
                   </td>
                   <td>
                     <span className="ultima-verificacion">
                       <FontAwesomeIcon icon={faClock} />
                       {server.ultima_verificacion
-                        ? new Date(server.ultima_verificacion).toLocaleString(
-                            "es-ES"
-                          )
+                        ? formatDate(server.ultima_verificacion)
                         : "Sin verificar"}
                     </span>
                   </td>
@@ -452,7 +578,11 @@ const ServerStatusTable = () => {
                     <div className="action-buttons">
                       <button
                         className="btn btn-info"
-                        onClick={(e) => verifyServer(server.id, e)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          verifyServer(server.id);
+                        }}
                         title="Verificar estado"
                         disabled={verifyingServers.has(server.id)}
                       >
@@ -492,9 +622,11 @@ const ServerStatusTable = () => {
 
       <div className="table-footer">
         <p>
-          Mostrando {filteredServers.length} de {servers.length} servidores
+          Mostrando {filteredServers.length} de {servers.length} equipos
+          {selectedType !== "todos" && ` • Filtrado por: ${selectedType}`}
+          {searchTerm && ` • Búsqueda: "${searchTerm}"`}
           {verifyingServers.size > 0 &&
-            ` • Verificando ${verifyingServers.size} servidor(es)...`}
+            ` • Verificando ${verifyingServers.size} equipo(s)...`}
         </p>
       </div>
     </div>
