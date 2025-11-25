@@ -456,9 +456,9 @@ app.post("/api/impresoras", async (req, res) => {
     const estadoInicial = await verificarEstadoImpresora(ip);
 
     await pool.query(
-      `INSERT INTO impresoras 
+      `INSERT INTO impresoras
         (ip, sucursal, modelo, drivers_url, tipo, toner_reserva, direccion,
-         cambios_toner, toner_anterior, numero_serie, contador_paginas, estado, ultima_verificacion) 
+         cambios_toner, toner_anterior, numero_serie, contador_paginas, estado, ultima_verificacion)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, $11, $12)`,
       [
         ip,
@@ -506,8 +506,8 @@ app.put("/api/impresoras/:id", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `UPDATE impresoras SET 
-        ip = $1, sucursal = $2, modelo = $3, drivers_url = $4, tipo = $5, 
+      `UPDATE impresoras SET
+        ip = $1, sucursal = $2, modelo = $3, drivers_url = $4, tipo = $5,
         toner_reserva = $6, direccion = $7
        WHERE id = $8 RETURNING *`,
       [ip, sucursal, modelo, drivers_url, tipo, toner_reserva, direccion, id]
@@ -548,7 +548,7 @@ app.put("/api/pedido", async (req, res) => {
 
   try {
     await pool.query(
-      `UPDATE impresoras SET 
+      `UPDATE impresoras SET
         ultimo_pedido_fecha = NOW(),
         toner_reserva = toner_reserva + 1
        WHERE id = $1`,
@@ -566,24 +566,24 @@ app.listen(PORT, () => {
 });
 
 // 📊 ping
-// app.post("/ping", async (req, res) => {
-//   const { host } = req.body;
+app.post("/ping", async (req, res) => {
+  const { host } = req.body;
 
-//   if (!host) {
-//     return res.status(400).json({ error: "Debes enviar un host o IP" });
-//   }
+  if (!host) {
+    return res.status(400).json({ error: "Debes enviar un host o IP" });
+  }
 
-//   try {
-//     const result = await ping.promise.probe(host, { timeout: 5 });
-//     res.json({
-//       host: result.host,
-//       alive: result.alive,
-//       time: result.time,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ error: "Error al hacer ping" });
-//   }
-// });
+  try {
+    const result = await ping.promise.probe(host, { timeout: 5 });
+    res.json({
+      host: result.host,
+      alive: result.alive,
+      time: result.time,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Error al hacer ping" });
+  }
+});
 // 🟢 Obtener todos los servidores/equipos de red
 app.get("/api/servidores", async (req, res) => {
   try {
@@ -634,7 +634,7 @@ app.post("/api/servidores", async (req, res) => {
     const pingResult = await ping.promise.probe(ip, { timeout: 5 });
 
     const result = await pool.query(
-      `INSERT INTO servidores (ip, sucursal, nombre, tipo, estado, latencia, ultima_verificacion) 
+      `INSERT INTO servidores (ip, sucursal, nombre, tipo, estado, latencia, ultima_verificacion)
        VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`,
       [
         ip,
@@ -663,7 +663,7 @@ app.put("/api/servidores/:id", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `UPDATE servidores SET 
+      `UPDATE servidores SET
         ip = $1, sucursal = $2, nombre = $3, tipo = $4, updated_at = NOW()
        WHERE id = $5 RETURNING *`,
       [ip, sucursal, nombre, tipo, id]
@@ -719,10 +719,10 @@ app.post("/api/servidores/:id/verificar", async (req, res) => {
 
     // Actualizar estado en la base de datos
     await pool.query(
-      `UPDATE servidores SET 
-        estado = $1, 
-        latencia = $2, 
-        ultima_verificacion = NOW() 
+      `UPDATE servidores SET
+        estado = $1,
+        latencia = $2,
+        ultima_verificacion = NOW()
        WHERE id = $3`,
       [
         pingResult.alive ? "activo" : "inactivo",
@@ -756,10 +756,10 @@ app.post("/api/servidores/verificar-todos", async (req, res) => {
         });
 
         await pool.query(
-          `UPDATE servidores SET 
-            estado = $1, 
-            latencia = $2, 
-            ultima_verificacion = NOW() 
+          `UPDATE servidores SET
+            estado = $1,
+            latencia = $2,
+            ultima_verificacion = NOW()
            WHERE id = $3`,
           [
             pingResult.alive ? "activo" : "inactivo",
@@ -809,8 +809,8 @@ app.get("/api/servidores-estadisticas", async (req, res) => {
     );
 
     const porTipoResult = await pool.query(`
-      SELECT tipo, COUNT(*) as cantidad 
-      FROM servidores 
+      SELECT tipo, COUNT(*) as cantidad
+      FROM servidores
       GROUP BY tipo
     `);
 
@@ -851,10 +851,10 @@ setInterval(async () => {
         });
 
         await pool.query(
-          `UPDATE servidores SET 
-            estado = $1, 
-            latencia = $2, 
-            ultima_verificacion = NOW() 
+          `UPDATE servidores SET
+            estado = $1,
+            latencia = $2,
+            ultima_verificacion = NOW()
            WHERE id = $3`,
           [
             pingResult.alive ? "activo" : "inactivo",
@@ -876,10 +876,10 @@ setInterval(async () => {
         );
       } catch (error) {
         await pool.query(
-          `UPDATE servidores SET 
-            estado = 'inactivo', 
-            latencia = 'Error', 
-            ultima_verificacion = NOW() 
+          `UPDATE servidores SET
+            estado = 'inactivo',
+            latencia = 'Error',
+            ultima_verificacion = NOW()
            WHERE id = $1`,
           [servidor.id]
         );
@@ -947,7 +947,7 @@ app.get("/api/pedidos", async (req, res) => {
   try {
     // Para PostgreSQL
     const query = `
-      SELECT * FROM pedidos 
+      SELECT * FROM pedidos
       ORDER BY fecha_pedido DESC
     `;
 

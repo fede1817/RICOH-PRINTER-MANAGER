@@ -24,7 +24,7 @@ export default function PingApp() {
       <h1>Ping Network Tool</h1>
       <input
         type="text"
-        placeholder="Ej: google.com"
+        placeholder="Ej: 192.168.8.166"
         value={host}
         onChange={(e) => setHost(e.target.value)}
         className="input"
