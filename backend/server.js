@@ -33,6 +33,128 @@ const oids = [
 
 const nodemailer = require("nodemailer");
 
+// 🔧 NUEVA FUNCIÓN: Verificar estado de conexión de una impresora
+async function verificarEstadoImpresora(ip) {
+  try {
+    // Intentar ping primero
+    const pingResult = await ping.promise.probe(ip, { timeout: 3 });
+
+    if (!pingResult.alive) {
+      return { estado: "desconectada", ultima_verificacion: new Date() };
+    }
+
+    // Si responde al ping, intentar conexión SNMP para confirmar
+    const snmpResult = await new Promise((resolve) => {
+      const session = snmp.createSession(ip, "public", { timeout: 3000 });
+
+      session.get(["1.3.6.1.2.1.1.1.0"], (error, varbinds) => {
+        if (error) {
+          resolve({ estado: "desconectada", ultima_verificacion: new Date() });
+        } else {
+          resolve({ estado: "conectada", ultima_verificacion: new Date() });
+        }
+        session.close();
+      });
+    });
+
+    return snmpResult;
+  } catch (error) {
+    console.error(`❌ Error verificando estado de ${ip}:`, error);
+    return { estado: "desconectada", ultima_verificacion: new Date() };
+  }
+}
+
+// 🔧 NUEVA RUTA: Verificar estado de una impresora específica
+app.get("/api/impresoras/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Buscar impresora en la BD
+    const result = await pool.query("SELECT * FROM impresoras WHERE id = $1", [
+      id,
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Impresora no encontrada" });
+    }
+
+    const impresora = result.rows[0];
+
+    // Verificar estado
+    const estado = await verificarEstadoImpresora(impresora.ip);
+
+    // Actualizar en la base de datos
+    await pool.query(
+      "UPDATE impresoras SET estado = $1, ultima_verificacion = $2 WHERE id = $3",
+      [estado.estado, estado.ultima_verificacion, id]
+    );
+
+    res.json({
+      id: parseInt(id),
+      estado: estado.estado,
+      ultima_verificacion: estado.ultima_verificacion,
+    });
+  } catch (error) {
+    console.error("❌ Error verificando estado:", error);
+    res
+      .status(500)
+      .json({ error: "Error al verificar estado: " + error.message });
+  }
+});
+
+// 🔧 NUEVA RUTA: Verificar estado de TODAS las impresoras
+app.get("/api/impresoras/status", async (req, res) => {
+  try {
+    const { rows: impresoras } = await pool.query("SELECT * FROM impresoras");
+    const resultados = [];
+
+    // Verificar estado de cada impresora (con límite de tiempo)
+    for (const impresora of impresoras) {
+      try {
+        const estado = await Promise.race([
+          verificarEstadoImpresora(impresora.ip),
+          new Promise(
+            (_, reject) => setTimeout(() => reject(new Error("Timeout")), 40000) // 40 segundos timeout
+          ),
+        ]);
+
+        // Actualizar en la base de datos
+        await pool.query(
+          "UPDATE impresoras SET estado = $1, ultima_verificacion = $2 WHERE id = $3",
+          [estado.estado, estado.ultima_verificacion, impresora.id]
+        );
+
+        resultados.push({
+          id: impresora.id,
+          estado: estado.estado,
+          ultima_verificacion: estado.ultima_verificacion,
+        });
+      } catch (error) {
+        console.error(`❌ Error con impresora ${impresora.ip}:`, error);
+
+        // En caso de error, marcar como desconectada
+        await pool.query(
+          "UPDATE impresoras SET estado = $1, ultima_verificacion = $2 WHERE id = $3",
+          ["desconectada", new Date(), impresora.id]
+        );
+
+        resultados.push({
+          id: impresora.id,
+          estado: "desconectada",
+          ultima_verificacion: new Date(),
+        });
+      }
+    }
+
+    res.json(resultados);
+  } catch (error) {
+    console.error("❌ Error verificando estados:", error);
+    res
+      .status(500)
+      .json({ error: "Error al verificar estados: " + error.message });
+  }
+});
+
 // Convertir Word a PDF con LibreOffice
 function convertWordToPdf(inputPath, outputDir) {
   return new Promise((resolve, reject) => {
@@ -149,25 +271,6 @@ const transporter = nodemailer.createTransport({
     user: "federico.britez@surcomercial.com.py", // correo desde donde se envía
     pass: "Surcomercial.fbb",
   },
-});
-
-app.post("/ping", async (req, res) => {
-  const { host } = req.body;
-
-  if (!host) {
-    return res.status(400).json({ error: "Debes enviar un host o IP" });
-  }
-
-  try {
-    const result = await ping.promise.probe(host, { timeout: 5 });
-    res.json({
-      host: result.host,
-      alive: result.alive,
-      time: result.time,
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Error al hacer ping" });
-  }
 });
 
 function consultarToner(ip) {
@@ -349,11 +452,14 @@ app.post("/api/impresoras", async (req, res) => {
     const numero_serie = snmpData.numero_serie ?? "";
     const contador = snmpData.contador ?? 0;
 
+    // Verificar estado inicial
+    const estadoInicial = await verificarEstadoImpresora(ip);
+
     await pool.query(
       `INSERT INTO impresoras 
         (ip, sucursal, modelo, drivers_url, tipo, toner_reserva, direccion,
-         cambios_toner, toner_anterior, numero_serie, contador_paginas) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10)`,
+         cambios_toner, toner_anterior, numero_serie, contador_paginas, estado, ultima_verificacion) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, $11, $12)`,
       [
         ip,
         sucursal,
@@ -365,18 +471,22 @@ app.post("/api/impresoras", async (req, res) => {
         toner,
         numero_serie,
         contador,
+        estadoInicial.estado,
+        estadoInicial.ultima_verificacion,
       ]
     );
 
     res.status(201).json({
       message: "Impresora agregada con lectura SNMP inicial",
       toner_inicial: toner,
+      estado: estadoInicial.estado,
     });
   } catch (err) {
     console.error("❌ Error al agregar impresora:", err);
     res.status(500).json({ error: "Error al insertar impresora" });
   }
 });
+
 // 🟢 Obtener impresoras (desde BD, no SNMP en tiempo real)
 app.get("/api/toners", async (req, res) => {
   try {
@@ -451,8 +561,29 @@ app.put("/api/pedido", async (req, res) => {
   }
 });
 
-// 📊 RUTAS PARA SERVICIOS DE RED (SERVIDORES)
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+});
 
+// 📊 ping
+// app.post("/ping", async (req, res) => {
+//   const { host } = req.body;
+
+//   if (!host) {
+//     return res.status(400).json({ error: "Debes enviar un host o IP" });
+//   }
+
+//   try {
+//     const result = await ping.promise.probe(host, { timeout: 5 });
+//     res.json({
+//       host: result.host,
+//       alive: result.alive,
+//       time: result.time,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: "Error al hacer ping" });
+//   }
+// });
 // 🟢 Obtener todos los servidores/equipos de red
 app.get("/api/servidores", async (req, res) => {
   try {

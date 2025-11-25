@@ -86,6 +86,31 @@ function App() {
     setTablaActiva(nuevaTabla);
   };
 
+  const actualizarImpresora = (id, nuevosDatos) => {
+    setImpresoras((prev) =>
+      prev.map((imp) => (imp.id === id ? { ...imp, ...nuevosDatos } : imp))
+    );
+  };
+
+  // Función para actualizar todas las impresoras
+  const actualizarTodasImpresoras = (nuevasImpresoras) => {
+    setImpresoras((prevImpresoras) => {
+      // Combinar los nuevos estados con la información existente de las impresoras
+      return prevImpresoras.map((impresora) => {
+        const impresoraActualizada = nuevasImpresoras.find(
+          (nueva) => nueva.id === impresora.id
+        );
+        if (impresoraActualizada) {
+          return {
+            ...impresora,
+            estado: impresoraActualizada.estado,
+            ultima_verificacion: impresoraActualizada.ultima_verificacion,
+          };
+        }
+        return impresora;
+      });
+    });
+  };
   // ✅ Función para cargar impresoras
   const fetchImpresoras = (showMessage = false) => {
     if (!isAdmin) return; // Solo cargar si es admin
@@ -600,6 +625,8 @@ Correo: ${pedidoData.correo}
                 onDelete={handleDelete}
                 onInfo={(data) => setInfoModal({ visible: true, data })}
                 onCopy={handleCopyPedido}
+                onUpdatePrinter={actualizarImpresora} // 🔧 NUEVA PROP
+                onUpdateAllPrinters={actualizarTodasImpresoras} // 🔧 NUEVA PROP
               />
             )}
 
