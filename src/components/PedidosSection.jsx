@@ -114,7 +114,7 @@ const modelosYToners = {
   },
   "HP LaserJet Pro M203": {
     modelos: ["HP LaserJet Pro M203"],
-    toner: "HP 83A (CF283A)",
+    toner: "HP 30A",
     tipo: "Blanco y negro"
   },
   "HP LaserJet Pl 102w": {
