@@ -84,7 +84,7 @@ const PedidosSection = ({urls}) => {
 const modelosYToners = {
   "HP LaserJet Pro MFP M135w": {
     modelos: ["HP LaserJet Pro MFP M135w"],
-    toner: "HP 150A (W1500A)",
+    toner: "HP 105A (W1105A)",
     tipo: "Blanco y negro"
   },
   "HP LaserJet P1102w": {
@@ -99,7 +99,7 @@ const modelosYToners = {
   },
   "HP LaserJet Pro M107w": {
     modelos: ["HP LaserJet Pro M107w"],
-    toner: "HP 107A (W2070A)",
+    toner: "HP 105A (W1105A)",
     tipo: "Blanco y negro"
   },
   "HP LaserJet Pro MFP M201": {
@@ -109,7 +109,7 @@ const modelosYToners = {
   },
   "HP DESKJET INK ADVANTAGE 3775": {
     modelos: ["HP DESKJET INK ADVANTAGE 3775"],
-    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    toner: "HP 664 (F6U19AL)",
     tipo: "Color"
   },
   "HP LaserJet Pro M203": {
@@ -124,35 +124,35 @@ const modelosYToners = {
   },
   "HP DESKJET 2130": {
     modelos: ["HP DESKJET 2130"],
-    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    toner: "HP 664 (F6U19AL)",
     tipo: "Color"
   },
   "HP DESKJET 2700": {
     modelos: ["HP DESKJET 2700"],
-    toner: "HP 664 (F6U19AL)",
+    toner: "HP 667",
     tipo: "Color"
   },
 
   // 🔥 NUEVO — modelo que pediste
   "HP LaserJet Pro M127FN": {
     modelos: ["HP LaserJet Pro M127FN"],
-    toner: "HP 88A (CE288A)",
+    toner: "HP 83A",
     tipo: "Blanco y negro"
   },
 
   "HP Deskjet Ink Advantage 2375": {
     modelos: ["HP Deskjet Ink Advantage 2375"],
-    toner: "HP 664 (F6U19AL)",
+    toner: "HP 667",
     tipo: "Color"
   },
   "HP LaserJet Pro M203dw": {
     modelos: ["HP LaserJet Pro M203dw"],
-    toner: "HP 83A (CF283A)",
+    toner: "HP 30A",
     tipo: "Blanco y negro"
   },
   "HP DeskJet 2775": {
     modelos: ["HP DeskJet 2775"],
-    toner: "HP 664 (F6U19AL)",
+    toner: "HP 667",
     tipo: "Color"
   },
   "HP LaserJet Pro M102w": {
@@ -169,12 +169,12 @@ const modelosYToners = {
   // 🔥 NUEVO — HP DeskJet Ink Advantage 3635
   "HP DeskJet Ink Advantage 3635": {
     modelos: ["HP DeskJet Ink Advantage 3635"],
-    toner: "HP 664 (F6U19AL) – Cartucho de Tinta",
+    toner: "HP 664 (F6U19AL)",
     tipo: "Color"
   },
   "HP LaserJet M111a": {
     modelos: ["HP LaserJet M111a"],
-    toner: "HP 105A",
+    toner: "HP 150A (W1500A)",
     tipo: "Blanco y negro"
   }
 };
