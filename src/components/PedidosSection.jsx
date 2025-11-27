@@ -968,8 +968,6 @@ const modelosYToners = {
                       <span className="text-white">{tonerInfo.toner}</span>
                     </div>
                     <div className="flex items-center space-x-2 text-sm mt-1">
-                      <span className="text-blue-300 font-semibold">Tipo:</span>
-                      <span className="text-white">{tonerInfo.tipo}</span>
                     </div>
                   </div>
                 )}
@@ -1001,7 +999,7 @@ const modelosYToners = {
                         className="text-blue-500 focus:ring-blue-500"
                         required
                       />
-                      <span className="text-white">{tonerInfo.tipo} (Recomendado)</span>
+                      <span className="text-white">{tonerInfo.tipo}</span>
                     </label>
                     
                     {tonerInfo.tipo === "Blanco y negro" && (
