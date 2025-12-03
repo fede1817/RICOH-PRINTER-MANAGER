@@ -179,6 +179,11 @@ const ServerModal = ({
                 <option value="router">Router</option>
                 <option value="firewall">Firewall</option>
                 <option value="database">Base de Datos</option>
+                <option value="nvr">NVR</option>
+                <option value="dvr">DVR</option>
+                <option value="cam">Cámara</option>
+                <option value="access-point">Access Point</option>
+                <option value="workstation">Workstation</option>
               </select>
             </div>
           </div>
