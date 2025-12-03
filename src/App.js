@@ -565,7 +565,7 @@ Correo: ${pedidoData.correo}
                 {tablaActiva === "servidores" && "Estado del Servidor"}
                 {tablaActiva === "pedidos" && "Lista de Pedidos"}
                 {tablaActiva === "censos" && "Validador de Censos"}
-                {tablaActiva === "rastreo" && "Validador de Censos"}
+                {tablaActiva === "rastreo" && "Rastreo de Dispositivos"}
               </h1>
               {!isAdmin && (
                 <p className="text-sm text-gray-400 mt-1">
