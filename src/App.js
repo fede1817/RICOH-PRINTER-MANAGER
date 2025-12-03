@@ -21,6 +21,8 @@ import {
 import ServerStatusTable from "./components/ServerStatusTable";
 import PedidosSection from "./components/PedidosSection";
 import Censo from "./components/Censo";
+import CellManager from "./components/CellManager";
+import { FiNavigation } from "react-icons/fi";
 
 function App() {
   const [impresoras, setImpresoras] = useState([]);
@@ -438,6 +440,11 @@ Correo: ${pedidoData.correo}
           label: "Censos",
           icon: <IoIosPersonAdd className="text-2xl" />,
         },
+        {
+          id: "rastreo",
+          label: "Rastreo",
+          icon: <FiNavigation className="text-2xl" />,
+        },
       ]
     : [
         {
@@ -558,6 +565,7 @@ Correo: ${pedidoData.correo}
                 {tablaActiva === "servidores" && "Estado del Servidor"}
                 {tablaActiva === "pedidos" && "Lista de Pedidos"}
                 {tablaActiva === "censos" && "Validador de Censos"}
+                {tablaActiva === "rastreo" && "Validador de Censos"}
               </h1>
               {!isAdmin && (
                 <p className="text-sm text-gray-400 mt-1">
@@ -642,6 +650,11 @@ Correo: ${pedidoData.correo}
           {tablaActiva === "censos" && isAdmin && (
             <div id="censos">
               <Censo />
+            </div>
+          )}
+          {tablaActiva === "rastreo" && isAdmin && (
+            <div id="rastreo">
+              <CellManager />
             </div>
           )}
         </main>
