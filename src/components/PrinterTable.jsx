@@ -3,7 +3,7 @@ import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { FaCartShopping } from "react-icons/fa6";
 import { BsInfoCircleFill } from "react-icons/bs";
-import { FaPrint, FaSync } from "react-icons/fa";
+import { FaPrint, FaSync, FaPowerOff } from "react-icons/fa";
 import { useState } from "react";
 import Swal from "sweetalert2";
 
@@ -14,13 +14,185 @@ export default function PrinterTable({
   onDelete,
   onInfo,
   onCopy,
-  onUpdatePrinter, // 🔧 NUEVA PROP
-  onUpdateAllPrinters, // 🔧 NUEVA PROP
+  onUpdatePrinter,
+  onUpdateAllPrinters,
 }) {
   const [loadingStates, setLoadingStates] = useState({});
-  const [loadingAll, setLoadingAll] = useState(false); // 🔧 NUEVO ESTADO PARA CARGA GENERAL
+  const [loadingAll, setLoadingAll] = useState(false);
+  const [rebootingStates, setRebootingStates] = useState({});
+  const [showRebootDialog, setShowRebootDialog] = useState(false);
+  const [selectedPrinter, setSelectedPrinter] = useState(null);
 
-  // 🔹 Función para verificar estado de una impresora específica
+  // 🔧 NUEVA FUNCIÓN: Reiniciar impresora
+  const handleReboot = async (printerId, ip, modelo, tipoReinicio = "warm") => {
+    setRebootingStates(prev => ({ ...prev, [printerId]: true }));
+
+    try {
+      // Verificar estado actual
+      const estadoRes = await fetch(
+        `http://192.168.8.166:3001/api/impresoras/${printerId}/status`
+      );
+      const estadoData = await estadoRes.json();
+
+      if (estadoData.estado === "desconectada") {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Impresora desconectada',
+          text: 'No se puede reiniciar una impresora desconectada',
+          background: '#2c2c2c',
+          color: '#fff',
+          confirmButtonColor: '#3085d6',
+        });
+        setRebootingStates(prev => ({ ...prev, [printerId]: false }));
+        return;
+      }
+
+      // Confirmación simple
+      const confirmResult = await Swal.fire({
+        title: `¿Reiniciar impresora?`,
+        html: `
+          <div style="text-align: center; margin: 15px 0;">
+            <p><strong>${modelo}</strong></p>
+            <p>IP: ${ip}</p>
+            <p>Tipo: ${tipoReinicio === "warm" ? "Reinicio suave" : "Reinicio completo"}</p>
+            <p style="color: #ff8c00; margin-top: 10px;">
+              ⚠️ La impresora estará indisponible por ~2-3 minutos
+            </p>
+          </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#ff8c00',
+        cancelButtonColor: '#666',
+        confirmButtonText: 'Sí, reiniciar',
+        cancelButtonText: 'Cancelar',
+        background: '#2c2c2c',
+        color: '#fff',
+      });
+
+      if (!confirmResult.isConfirmed) {
+        setRebootingStates(prev => ({ ...prev, [printerId]: false }));
+        return;
+      }
+
+      // Mostrar loading
+      const { value: accept } = await Swal.fire({
+        title: 'Reiniciando...',
+        html: `
+          <div style="text-align: center;">
+            <div style="
+              width: 50px;
+              height: 50px;
+              border: 4px solid rgba(255, 255, 255, 0.1);
+              border-top: 4px solid #ff8c00;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+              margin: 0 auto 15px;
+            "></div>
+            <p>Por favor espera...</p>
+            <p style="font-size: 0.9rem; color: #aaa;">IP: ${ip}</p>
+          </div>
+          <style>
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          </style>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        background: '#2c2c2c',
+        color: '#fff',
+        timer: 3000,
+      });
+
+      // Ejecutar reinicio
+      const res = await fetch(
+        `http://192.168.8.166:3001/api/impresoras/${printerId}/reboot`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tipo: tipoReinicio,
+            community_write: 'private'
+          })
+        }
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        Swal.fire({
+          icon: 'success',
+          title: '✅ Reinicio iniciado',
+          html: `
+            <div style="text-align: center; margin: 15px 0;">
+              <p>El reinicio se ha iniciado correctamente</p>
+              <p style="font-size: 0.9rem; color: #aaa;">
+                Verifica el estado en unos minutos
+              </p>
+            </div>
+          `,
+          timer: 3000,
+          showConfirmButton: false,
+          background: '#2c2c2c',
+          color: '#fff',
+        });
+
+        // Actualizar estado después de 10 segundos
+        setTimeout(() => {
+          checkSinglePrinterStatus(printerId);
+        }, 10000);
+
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error en reinicio',
+          text: data.error || 'No se pudo reiniciar la impresora',
+          background: '#2c2c2c',
+          color: '#fff',
+          confirmButtonColor: '#d33',
+        });
+      }
+
+    } catch (error) {
+      console.error('Error en reinicio:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de conexión',
+        text: error.message,
+        background: '#2c2c2c',
+        color: '#fff',
+        confirmButtonColor: '#d33',
+      });
+    } finally {
+      setRebootingStates(prev => ({ ...prev, [printerId]: false }));
+    }
+  };
+
+  // 🔧 NUEVA FUNCIÓN: Mostrar opciones de reinicio
+  const showRebootOptions = (printer) => {
+    setSelectedPrinter(printer);
+    setShowRebootDialog(true);
+  };
+
+  // 🔧 FUNCIÓN: Ejecutar reinicio desde diálogo
+  const executeReboot = async (tipoReinicio) => {
+    if (!selectedPrinter) return;
+    
+    setShowRebootDialog(false);
+    await handleReboot(
+      selectedPrinter.id,
+      selectedPrinter.ip,
+      selectedPrinter.modelo,
+      tipoReinicio
+    );
+    setSelectedPrinter(null);
+  };
+
+  // 🔹 Función para verificar estado de una impresora específica (existente - SIN CAMBIOS)
   const checkSinglePrinterStatus = async (printerId) => {
     setLoadingStates((prev) => ({ ...prev, [printerId]: true }));
 
@@ -35,7 +207,6 @@ export default function PrinterTable({
 
       const data = await res.json();
 
-      // 🔧 ACTUALIZAR EL ESTADO EN EL COMPONENTE PADRE
       if (onUpdatePrinter) {
         onUpdatePrinter(printerId, {
           estado: data.estado,
@@ -43,7 +214,6 @@ export default function PrinterTable({
         });
       }
 
-      // Mostrar mensaje de éxito
       Swal.fire({
         icon: "success",
         title: "Estado actualizado",
@@ -70,9 +240,9 @@ export default function PrinterTable({
     }
   };
 
-  // 🔹 Función para verificar estado de TODAS las impresoras
+  // 🔹 Función para verificar estado de TODAS las impresoras (existente - SIN CAMBIOS)
   const checkAllPrintersStatus = async () => {
-    setLoadingAll(true); // 🔧 ACTIVAR SPINNER GENERAL
+    setLoadingAll(true);
 
     try {
       const res = await fetch(
@@ -85,7 +255,6 @@ export default function PrinterTable({
 
       const data = await res.json();
 
-      // 🔧 ACTUALIZAR TODAS LAS IMPRESORAS EN EL COMPONENTE PADRE
       if (onUpdateAllPrinters) {
         onUpdateAllPrinters(data);
       }
@@ -110,11 +279,11 @@ export default function PrinterTable({
         confirmButtonColor: "#d33",
       });
     } finally {
-      setLoadingAll(false); // 🔧 DESACTIVAR SPINNER GENERAL
+      setLoadingAll(false);
     }
   };
 
-  // 🔹 Función para obtener el ícono y color del estado
+  // 🔹 Función para obtener el ícono y color del estado (existente - SIN CAMBIOS)
   const getStatusInfo = (estado) => {
     const status = estado || "verificando";
 
@@ -140,11 +309,10 @@ export default function PrinterTable({
     }
   };
 
-  // 🔹 Función para subir archivo e imprimir
+  // 🔹 Función para subir archivo e imprimir (existente - SIN CAMBIOS)
   const handlePrint = async (impresoraId, file, impresoraEstado) => {
     if (!file) return;
 
-    // Verificar estado antes de imprimir
     if (impresoraEstado === "desconectada") {
       Swal.fire({
         icon: "warning",
@@ -157,7 +325,6 @@ export default function PrinterTable({
       return;
     }
 
-    // Crear y mostrar el spinner
     const spinner = document.createElement("div");
     spinner.innerHTML = `
     <div style="
@@ -252,13 +419,80 @@ export default function PrinterTable({
 
   return (
     <>
+      {/* 🔧 DIÁLOGO DE REINICIO CON ESTILOS ESPECÍFICOS */}
+      {showRebootDialog && selectedPrinter && (
+        <div style={styles.rebootDialogOverlay}>
+          <div style={styles.rebootDialog}>
+            <h3 style={styles.dialogTitle}>
+              <FaPowerOff style={{ marginRight: '10px' }} />
+              Reiniciar Impresora
+            </h3>
+            
+            <div style={styles.printerInfo}>
+              <p><strong>Modelo:</strong> {selectedPrinter.modelo}</p>
+              <p><strong>IP:</strong> {selectedPrinter.ip}</p>
+              <p><strong>Sucursal:</strong> {selectedPrinter.sucursal}</p>
+            </div>
+
+            <div style={styles.warningBox}>
+              <p style={styles.warningText}>
+                ⚠️ La impresora estará indisponible durante 2-3 minutos
+              </p>
+            </div>
+
+            <div style={styles.rebootOptions}>
+              <button 
+                style={styles.rebootOptionWarm}
+                onClick={() => executeReboot("warm")}
+                disabled={rebootingStates[selectedPrinter.id]}
+              >
+                <div style={styles.optionIcon}>🔄</div>
+                <div style={styles.optionContent}>
+                  <div style={styles.optionTitle}>Reinicio Suave</div>
+                  <div style={styles.optionDesc}>Recomendado para problemas menores</div>
+                </div>
+                {rebootingStates[selectedPrinter.id] && (
+                  <div style={styles.spinnerSmall}></div>
+                )}
+              </button>
+              
+              <button 
+                style={styles.rebootOptionCold}
+                onClick={() => executeReboot("cold")}
+                disabled={rebootingStates[selectedPrinter.id]}
+              >
+                <div style={styles.optionIcon}>❄️</div>
+                <div style={styles.optionContent}>
+                  <div style={styles.optionTitle}>Reinicio Completo</div>
+                  <div style={styles.optionDesc}>Como apagar y encender físicamente</div>
+                </div>
+                {rebootingStates[selectedPrinter.id] && (
+                  <div style={styles.spinnerSmall}></div>
+                )}
+              </button>
+            </div>
+            
+            <div style={styles.dialogActions}>
+              <button 
+                style={styles.cancelBtn}
+                onClick={() => {
+                  setShowRebootDialog(false);
+                  setSelectedPrinter(null);
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <table className="dark-table">
         <thead>
           <tr>
             <th>
               <div className="ip-header">
                 <span>IP</span>
-                {/* 🔧 BOTÓN PARA ACTUALIZAR TODOS LOS ESTADOS - AHORA EN EL HEADER DE IP */}
                 <div className="tooltip-container">
                   <button
                     className="refresh-all-btn"
@@ -290,6 +524,7 @@ export default function PrinterTable({
             .map((impresora, index) => {
               const statusInfo = getStatusInfo(impresora.estado);
               const isLoading = loadingStates[impresora.id];
+              const isRebooting = rebootingStates[impresora.id];
 
               return (
                 <tr key={`${tipo}-${index}`}>
@@ -376,6 +611,25 @@ export default function PrinterTable({
                       disabled={impresora.estado === "desconectada"}
                     />
                     <div className="action-buttons">
+                      {/* 🔧 BOTÓN DE REINICIO CON ESTILOS INLINE */}
+                      <div className="tooltip-container">
+                        <button
+                          style={styles.rebootBtn}
+                          onClick={() => showRebootOptions(impresora)}
+                          disabled={impresora.estado === "desconectada" || isRebooting}
+                        >
+                          {isRebooting ? (
+                            <div style={styles.spinnerSmall}></div>
+                          ) : (
+                            <FaPowerOff />
+                          )}
+                        </button>
+                        <span className="tooltip">
+                          {isRebooting ? "Reiniciando..." : "Reiniciar impresora"}
+                        </span>
+                      </div>
+                      
+                      {/* 🖨️ BOTONES EXISTENTES (mantienen sus estilos CSS) */}
                       <div className="tooltip-container">
                         <button
                           className="print-btn"
@@ -425,7 +679,9 @@ export default function PrinterTable({
         </tbody>
       </table>
 
+      {/* 🔧 ESTILOS INLINE SOLO PARA EL REINICIO */}
       <style jsx>{`
+        /* ESTILOS EXISTENTES (NO TOCAR) */
         .ip-header {
           display: flex;
           align-items: center;
@@ -545,7 +801,6 @@ export default function PrinterTable({
           font-style: italic;
         }
 
-        /* 🔧 ESTILOS PARA TOOLTIPS */
         .tooltip-container {
           position: relative;
           display: inline-block;
@@ -585,7 +840,6 @@ export default function PrinterTable({
           visibility: visible;
         }
 
-        /* Estilos para los botones de acción */
         .action-buttons {
           display: flex;
           gap: 8px;
@@ -601,7 +855,6 @@ export default function PrinterTable({
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #fff;
           transition: background-color 0.3s;
         }
 
@@ -637,3 +890,177 @@ export default function PrinterTable({
     </>
   );
 }
+
+// 🔧 ESTILOS INLINE PARA EL BOTÓN Y MODAL DE REINICIO
+const styles = {
+  // Botón de reinicio en la tabla
+  rebootBtn: {
+    background: 'rgba(255, 140, 0, 0.15)',
+    color: '#ff8c00',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '8px',
+    borderRadius: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.3s',
+  },
+
+  // Modal overlay
+  rebootDialogOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    background: 'rgba(0, 0, 0, 0.8)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+
+  // Modal container
+  rebootDialog: {
+    background: '#2c2c2c',
+    padding: '25px',
+    borderRadius: '10px',
+    width: '400px',
+    maxWidth: '90%',
+    border: '1px solid #444',
+    boxShadow: '0 5px 20px rgba(0, 0, 0, 0.5)',
+  },
+
+  // Título del modal
+  dialogTitle: {
+    margin: '0 0 20px 0',
+    color: '#fff',
+    fontSize: '1.2rem',
+    textAlign: 'center',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Información de la impresora
+  printerInfo: {
+    margin: '15px 0',
+    padding: '15px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: '8px',
+  },
+
+  printerInfoText: {
+    margin: '5px 0',
+    color: '#ccc',
+    fontSize: '0.9rem',
+  },
+
+  // Caja de advertencia
+  warningBox: {
+    margin: '15px 0',
+    padding: '10px',
+    background: 'rgba(255, 140, 0, 0.1)',
+    border: '1px solid rgba(255, 140, 0, 0.3)',
+    borderRadius: '6px',
+    textAlign: 'center',
+  },
+
+  warningText: {
+    color: '#ff8c00',
+    fontSize: '0.9rem',
+    margin: 0,
+  },
+
+  // Opciones de reinicio
+  rebootOptions: {
+    margin: '20px 0',
+  },
+
+  // Opción de reinicio suave
+  rebootOptionWarm: {
+    width: '100%',
+    padding: '15px',
+    margin: '10px 0',
+    border: 'none',
+    borderRadius: '8px',
+    background: 'rgba(255, 140, 0, 0.1)',
+    color: '#ff8c00',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    textAlign: 'left',
+  },
+
+  // Opción de reinicio completo
+  rebootOptionCold: {
+    width: '100%',
+    padding: '15px',
+    margin: '10px 0',
+    border: 'none',
+    borderRadius: '8px',
+    background: 'rgba(0, 150, 255, 0.1)',
+    color: '#0096ff',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    textAlign: 'left',
+  },
+
+  // Icono de opción
+  optionIcon: {
+    fontSize: '24px',
+  },
+
+  // Contenido de opción
+  optionContent: {
+    flex: 1,
+  },
+
+  // Título de opción
+  optionTitle: {
+    display: 'block',
+    fontSize: '1rem',
+    fontWeight: 'bold',
+    marginBottom: '3px',
+  },
+
+  // Descripción de opción
+  optionDesc: {
+    color: '#aaa',
+    fontSize: '0.8rem',
+  },
+
+  // Spinner pequeño
+  spinnerSmall: {
+    width: '16px',
+    height: '16px',
+    border: '2px solid rgba(255, 255, 255, 0.3)',
+    borderTop: '2px solid #fff',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+  },
+
+  // Botones de acción del modal
+  dialogActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: '20px',
+  },
+
+  // Botón cancelar
+  cancelBtn: {
+    background: '#666',
+    color: 'white',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    transition: 'background 0.3s',
+  },
+};

@@ -9,7 +9,7 @@ const net = require("net");
 const fs = require("fs");
 const path = require("path");
 const { PDFDocument } = require("pdf-lib");
-const upload = multer({ dest: "uploads/" }); // carpeta temporal
+const upload = multer({ dest: "uploads/" });
 
 const app = express();
 const PORT = 3001;
@@ -24,14 +24,281 @@ const pool = new Pool({
   port: 5432,
 });
 
-// OIDs SNMP comunes para impresoras Ricoh
+// OIDs SNMP comunes
 const oids = [
-  "1.3.6.1.2.1.43.11.1.1.9.1.1", // Toner negro
-  "1.3.6.1.2.1.43.5.1.1.17.1", // Número de serie
-  "1.3.6.1.2.1.43.10.2.1.4.1.1", // Contador total de páginas
+  "1.3.6.1.2.1.43.11.1.1.9.1.1",
+  "1.3.6.1.2.1.43.5.1.1.17.1",
+  "1.3.6.1.2.1.43.10.2.1.4.1.1",
 ];
 
+// 📌 OIDs para reinicio SNMP
+const REBOOT_OIDS = {
+  WARM_START: "1.3.6.1.2.1.43.5.1.1.3.1",
+  COLD_START: "1.3.6.1.2.1.25.3.2.1.5.1",
+  RICOH_REBOOT: "1.3.6.1.4.1.367.3.2.1.2.1.0",
+};
+
 const nodemailer = require("nodemailer");
+
+// 🔧 FUNCIÓN: Reiniciar impresora via SNMP (SIN BD)
+async function reiniciarImpresoraSNMP(
+  ip,
+  communityWrite = "private",
+  tipoReinicio = "warm"
+) {
+  return new Promise((resolve, reject) => {
+    console.log(`🔄 Intentando reinicio ${tipoReinicio} en ${ip}...`);
+
+    const session = snmp.createSession(ip, communityWrite, {
+      timeout: 5000,
+      retries: 1,
+    });
+
+    let oidSeleccionado;
+    let valor;
+
+    // Seleccionar OID según tipo de reinicio
+    if (tipoReinicio === "warm") {
+      oidSeleccionado = REBOOT_OIDS.WARM_START;
+      valor = 3; // warmStart
+    } else if (tipoReinicio === "cold") {
+      oidSeleccionado = REBOOT_OIDS.COLD_START;
+      valor = 2; // coldStart
+    } else {
+      oidSeleccionado = REBOOT_OIDS.RICOH_REBOOT;
+      valor = 1;
+    }
+
+    const varbinds = [
+      {
+        oid: oidSeleccionado,
+        type: snmp.ObjectType.Integer,
+        value: valor,
+      },
+    ];
+
+    session.set(varbinds, (error, varbinds) => {
+      session.close();
+
+      if (error) {
+        console.error(`❌ Error SNMP en ${ip}:`, error);
+
+        // Intentar con OID alternativo
+        if (oidSeleccionado !== REBOOT_OIDS.WARM_START) {
+          console.log(`🔄 Intentando con OID alternativo...`);
+          setTimeout(() => {
+            const sessionAlt = snmp.createSession(ip, communityWrite, {
+              timeout: 5000,
+              retries: 1,
+            });
+
+            sessionAlt.set(
+              [
+                {
+                  oid: REBOOT_OIDS.WARM_START,
+                  type: snmp.ObjectType.Integer,
+                  value: 3,
+                },
+              ],
+              (errorAlt) => {
+                sessionAlt.close();
+                if (errorAlt) {
+                  reject(
+                    new Error(`No se pudo reiniciar ${ip}: ${error.message}`)
+                  );
+                } else {
+                  resolve({
+                    success: true,
+                    message: `Reinicio iniciado en ${ip}`,
+                    tipo: "warm",
+                    timestamp: new Date(),
+                    ip: ip,
+                  });
+                }
+              }
+            );
+          }, 1000);
+        } else {
+          reject(new Error(`No se pudo reiniciar ${ip}: ${error.message}`));
+        }
+      } else {
+        console.log(`✅ Comando de reinicio enviado a ${ip}`);
+        resolve({
+          success: true,
+          message: `Reinicio ${tipoReinicio} iniciado en ${ip}`,
+          tipo: tipoReinicio,
+          timestamp: new Date(),
+          ip: ip,
+        });
+      }
+    });
+  });
+}
+
+// 🔧 FUNCIÓN: Verificar SNMP de escritura
+async function verificarSNMPEscritura(ip, communityWrite = "private") {
+  return new Promise((resolve) => {
+    const session = snmp.createSession(ip, communityWrite, { timeout: 3000 });
+
+    session.get(["1.3.6.1.2.1.1.1.0"], (error, varbinds) => {
+      session.close();
+
+      if (error) {
+        resolve({
+          habilitado: false,
+          error: error.message,
+          community: communityWrite,
+        });
+      } else {
+        resolve({
+          habilitado: true,
+          community: communityWrite,
+        });
+      }
+    });
+  });
+}
+
+// 🔧 NUEVA RUTA: Reiniciar impresora específica
+app.post("/api/impresoras/:id/reboot", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo = "warm", community_write = "private" } = req.body;
+
+    // Buscar impresora en la BD solo para obtener IP
+    const result = await pool.query(
+      "SELECT ip, modelo, sucursal FROM impresoras WHERE id = $1",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Impresora no encontrada" });
+    }
+
+    const impresora = result.rows[0];
+
+    // Verificar estado actual
+    const estadoActual = await verificarEstadoImpresora(impresora.ip);
+
+    if (estadoActual.estado === "desconectada") {
+      return res.status(400).json({
+        error: "Impresora desconectada",
+        ip: impresora.ip,
+        estado: "desconectada",
+      });
+    }
+
+    // Verificar permisos SNMP
+    const snmpCheck = await verificarSNMPEscritura(
+      impresora.ip,
+      community_write
+    );
+
+    if (!snmpCheck.habilitado) {
+      return res.status(403).json({
+        error: "SNMP de escritura no habilitado",
+        ip: impresora.ip,
+        community_probada: community_write,
+        sugerencia: "Verificar configuración SNMP en la impresora",
+      });
+    }
+
+    // Ejecutar reinicio
+    const resultado = await reiniciarImpresoraSNMP(
+      impresora.ip,
+      community_write,
+      tipo
+    );
+
+    res.json({
+      id: parseInt(id),
+      ip: impresora.ip,
+      modelo: impresora.modelo,
+      sucursal: impresora.sucursal,
+      reinicio: resultado,
+      estado_previo: estadoActual.estado,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    console.error("❌ Error en reinicio:", error);
+    res.status(500).json({
+      error: "Error al reiniciar impresora: " + error.message,
+      detalle: error.message,
+    });
+  }
+});
+
+// 🔧 NUEVA RUTA: Verificar SNMP de una impresora
+app.get("/api/impresoras/:id/snmp-check", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { community_write = "private" } = req.query;
+
+    const result = await pool.query(
+      "SELECT ip, modelo, estado FROM impresoras WHERE id = $1",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Impresora no encontrada" });
+    }
+
+    const impresora = result.rows[0];
+
+    // Verificar estado de conexión
+    const estado = await verificarEstadoImpresora(impresora.ip);
+
+    if (estado.estado === "desconectada") {
+      return res.json({
+        id: parseInt(id),
+        ip: impresora.ip,
+        estado: "desconectada",
+        snmp_escritura: "no verificable",
+        mensaje: "Impresora no responde",
+      });
+    }
+
+    // Verificar SNMP lectura
+    const sessionRead = snmp.createSession(impresora.ip, "public", {
+      timeout: 3000,
+    });
+    const lecturaSNMP = await new Promise((resolve) => {
+      sessionRead.get(["1.3.6.1.2.1.1.1.0"], (error, varbinds) => {
+        sessionRead.close();
+        resolve({ habilitado: !error, error: error?.message });
+      });
+    });
+
+    // Verificar SNMP escritura
+    const escrituraSNMP = await verificarSNMPEscritura(
+      impresora.ip,
+      community_write
+    );
+
+    res.json({
+      id: parseInt(id),
+      ip: impresora.ip,
+      modelo: impresora.modelo,
+      estado: estado.estado,
+      snmp_lectura: {
+        habilitado: lecturaSNMP.habilitado,
+        community: "public",
+      },
+      snmp_escritura: escrituraSNMP,
+      recomendacion: escrituraSNMP.habilitado
+        ? "Listo para reinicios remotos"
+        : "Configurar SNMP write en la impresora",
+    });
+  } catch (error) {
+    console.error("❌ Error verificando SNMP:", error);
+    res
+      .status(500)
+      .json({ error: "Error al verificar SNMP: " + error.message });
+  }
+});
+app.listen(PORT, () => {
+  console.log(`🔌 Endpoints de reinicio disponibles:`);
+});
 
 // 🔧 NUEVA FUNCIÓN: Verificar estado de conexión de una impresora
 async function verificarEstadoImpresora(ip) {
