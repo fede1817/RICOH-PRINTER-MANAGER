@@ -106,7 +106,9 @@ export const useRUCValidation = () => {
               clienteExistente.razonsocial || "N/A"
             } (Código: ${
               clienteExistente.codclienteerp || "N/A"
-            } - ${estadoCliente})`,
+            } - ${estadoCliente} - Vendedor: ${
+              clienteExistente.nombrevendedor
+            })`,
             clienteExistente,
           };
         }

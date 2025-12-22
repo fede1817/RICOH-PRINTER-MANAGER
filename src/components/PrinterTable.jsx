@@ -1,13 +1,191 @@
+import React, { useState, useCallback, useMemo, memo } from "react";
 import TonerBar from "./TonerBar";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { FaCartShopping } from "react-icons/fa6";
 import { BsInfoCircleFill } from "react-icons/bs";
 import { FaPrint, FaSync, FaPowerOff } from "react-icons/fa";
-import { useState } from "react";
 import Swal from "sweetalert2";
 
-export default function PrinterTable({
+// 🔥 CONSTANTES FUERA DEL COMPONENTE
+const API_BASE_URL = "http://192.168.8.166:3001";
+const INITIAL_STATUS_INFO = {
+  verificando: { icon: "🟡", text: "Verificando", class: "status-checking" },
+  conectada: { icon: "🟢", text: "Conectada", class: "status-connected" },
+  desconectada: { icon: "🔴", text: "Desconectada", class: "status-disconnected" }
+};
+
+// 🔥 COMPONENTES MEMOIZADOS
+const StatusIndicator = memo(({ estado }) => {
+  const statusInfo = INITIAL_STATUS_INFO[estado] || INITIAL_STATUS_INFO.verificando;
+  
+  return (
+    <div className={`status-indicator ${statusInfo.class}`}>
+      <span className="status-icon">{statusInfo.icon}</span>
+      <span className="status-text">{statusInfo.text}</span>
+    </div>
+  );
+});
+
+StatusIndicator.displayName = 'StatusIndicator';
+
+const RefreshButton = memo(({ onClick, loading, title, size = "small" }) => {
+  return (
+    <div className="tooltip-container">
+      <button
+        className={`refresh-btn ${size}`}
+        onClick={onClick}
+        disabled={loading}
+        aria-label={title}
+      >
+        {loading ? (
+          <div className="spinner-small"></div>
+        ) : (
+          <FaSync size={size === "small" ? 12 : 14} />
+        )}
+      </button>
+      <span className="tooltip">{title}</span>
+    </div>
+  );
+});
+
+RefreshButton.displayName = 'RefreshButton';
+
+const ActionButton = memo(({ 
+  icon: Icon, 
+  onClick, 
+  className, 
+  tooltip, 
+  disabled = false,
+  loading = false 
+}) => {
+  return (
+    <div className="tooltip-container">
+      <button
+        className={`action-btn ${className}`}
+        onClick={onClick}
+        disabled={disabled || loading}
+        aria-label={tooltip}
+      >
+        {loading ? <div className="spinner-small"></div> : <Icon />}
+      </button>
+      <span className="tooltip">{tooltip}</span>
+    </div>
+  );
+});
+
+ActionButton.displayName = 'ActionButton';
+
+// 🔥 REBOOT DIALOG COMPONENT
+const RebootDialog = memo(({ 
+  visible, 
+  printer, 
+  onReboot, 
+  onClose,
+  loading 
+}) => {
+  if (!visible || !printer) return null;
+
+  const handleReboot = (tipoReinicio) => {
+    onReboot(printer.id, printer.ip, printer.modelo, tipoReinicio);
+  };
+
+  return (
+    <div className="reboot-dialog-overlay">
+      <div className="reboot-dialog">
+        <h3 className="dialog-title">
+          <FaPowerOff className="dialog-icon" />
+          Reiniciar Impresora
+        </h3>
+        
+        <div className="printer-info">
+          <p><strong>Modelo:</strong> {printer.modelo}</p>
+          <p><strong>IP:</strong> {printer.ip}</p>
+          <p><strong>Sucursal:</strong> {printer.sucursal}</p>
+        </div>
+
+        <div className="warning-box">
+          <p className="warning-text">
+            ⚠️ La impresora estará indisponible durante 2-3 minutos
+          </p>
+        </div>
+
+        <div className="reboot-options">
+          <button 
+            className="reboot-option warm"
+            onClick={() => handleReboot("warm")}
+            disabled={loading}
+          >
+            <div className="option-icon">🔄</div>
+            <div className="option-content">
+              <div className="option-title">Reinicio Suave</div>
+              <div className="option-desc">Recomendado para problemas menores</div>
+            </div>
+            {loading && <div className="spinner-small"></div>}
+          </button>
+          
+          <button 
+            className="reboot-option cold"
+            onClick={() => handleReboot("cold")}
+            disabled={loading}
+          >
+            <div className="option-icon">❄️</div>
+            <div className="option-content">
+              <div className="option-title">Reinicio Completo</div>
+              <div className="option-desc">Como apagar y encender físicamente</div>
+            </div>
+            {loading && <div className="spinner-small"></div>}
+          </button>
+        </div>
+        
+        <div className="dialog-actions">
+          <button 
+            className="cancel-btn"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+RebootDialog.displayName = 'RebootDialog';
+
+// 🔥 FUNCIONES PURAS FUERA DEL COMPONENTE
+const generateRebootConfirmationHTML = (modelo, ip, tipoReinicio) => `
+  <div style="text-align: center; margin: 15px 0;">
+    <p><strong>${modelo}</strong></p>
+    <p>IP: ${ip}</p>
+    <p>Tipo: ${tipoReinicio === "warm" ? "Reinicio suave" : "Reinicio completo"}</p>
+    <p style="color: #ff8c00; margin-top: 10px;">
+      ⚠️ La impresora estará indisponible por ~2-3 minutos
+    </p>
+  </div>
+`;
+
+const showLoadingSwal = (ip) => {
+  return Swal.fire({
+    title: 'Reiniciando...',
+    html: `
+      <div style="text-align: center;">
+        <div class="custom-spinner"></div>
+        <p>Por favor espera...</p>
+        <p style="font-size: 0.9rem; color: #aaa;">IP: ${ip}</p>
+      </div>
+    `,
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    background: '#2c2c2c',
+    color: '#fff',
+    timer: 3000,
+  });
+};
+
+// 🔥 COMPONENTE PRINCIPAL
+function PrinterTable({
   impresoras,
   tipo,
   onEdit,
@@ -17,25 +195,33 @@ export default function PrinterTable({
   onUpdatePrinter,
   onUpdateAllPrinters,
 }) {
+  // 🔥 ESTADOS OPTIMIZADOS
   const [loadingStates, setLoadingStates] = useState({});
   const [loadingAll, setLoadingAll] = useState(false);
   const [rebootingStates, setRebootingStates] = useState({});
-  const [showRebootDialog, setShowRebootDialog] = useState(false);
-  const [selectedPrinter, setSelectedPrinter] = useState(null);
+  const [rebootDialog, setRebootDialog] = useState({
+    visible: false,
+    printer: null
+  });
 
-  // 🔧 NUEVA FUNCIÓN: Reiniciar impresora
-  const handleReboot = async (printerId, ip, modelo, tipoReinicio = "warm") => {
+  // 🔥 MEMOIZAR IMPRESORAS FILTRADAS
+  const filteredPrinters = useMemo(() => 
+    impresoras.filter((i) => i.tipo === tipo),
+    [impresoras, tipo]
+  );
+
+  // 🔥 HANDLERS OPTIMIZADOS CON useCallback
+  const handleReboot = useCallback(async (printerId, ip, modelo, tipoReinicio = "warm") => {
     setRebootingStates(prev => ({ ...prev, [printerId]: true }));
 
     try {
-      // Verificar estado actual
-      const estadoRes = await fetch(
-        `http://192.168.8.166:3001/api/impresoras/${printerId}/status`
-      );
+      // 🔥 VERIFICAR ESTADO ANTES DE REINICIAR
+      const estadoRes = await fetch(`${API_BASE_URL}/api/impresoras/${printerId}/status`);
+      if (!estadoRes.ok) throw new Error("Error al verificar estado");
+      
       const estadoData = await estadoRes.json();
-
       if (estadoData.estado === "desconectada") {
-        Swal.fire({
+        await Swal.fire({
           icon: 'warning',
           title: 'Impresora desconectada',
           text: 'No se puede reiniciar una impresora desconectada',
@@ -43,23 +229,13 @@ export default function PrinterTable({
           color: '#fff',
           confirmButtonColor: '#3085d6',
         });
-        setRebootingStates(prev => ({ ...prev, [printerId]: false }));
         return;
       }
 
-      // Confirmación simple
+      // 🔥 CONFIRMACIÓN
       const confirmResult = await Swal.fire({
         title: `¿Reiniciar impresora?`,
-        html: `
-          <div style="text-align: center; margin: 15px 0;">
-            <p><strong>${modelo}</strong></p>
-            <p>IP: ${ip}</p>
-            <p>Tipo: ${tipoReinicio === "warm" ? "Reinicio suave" : "Reinicio completo"}</p>
-            <p style="color: #ff8c00; margin-top: 10px;">
-              ⚠️ La impresora estará indisponible por ~2-3 minutos
-            </p>
-          </div>
-        `,
+        html: generateRebootConfirmationHTML(modelo, ip, tipoReinicio),
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#ff8c00',
@@ -70,61 +246,25 @@ export default function PrinterTable({
         color: '#fff',
       });
 
-      if (!confirmResult.isConfirmed) {
-        setRebootingStates(prev => ({ ...prev, [printerId]: false }));
-        return;
-      }
+      if (!confirmResult.isConfirmed) return;
 
-      // Mostrar loading
-      const { value: accept } = await Swal.fire({
-        title: 'Reiniciando...',
-        html: `
-          <div style="text-align: center;">
-            <div style="
-              width: 50px;
-              height: 50px;
-              border: 4px solid rgba(255, 255, 255, 0.1);
-              border-top: 4px solid #ff8c00;
-              border-radius: 50%;
-              animation: spin 1s linear infinite;
-              margin: 0 auto 15px;
-            "></div>
-            <p>Por favor espera...</p>
-            <p style="font-size: 0.9rem; color: #aaa;">IP: ${ip}</p>
-          </div>
-          <style>
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          </style>
-        `,
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        background: '#2c2c2c',
-        color: '#fff',
-        timer: 3000,
+      // 🔥 LOADING
+      await showLoadingSwal(ip);
+
+      // 🔥 EJECUTAR REINICIO
+      const res = await fetch(`${API_BASE_URL}/api/impresoras/${printerId}/reboot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: tipoReinicio,
+          community_write: 'private'
+        })
       });
-
-      // Ejecutar reinicio
-      const res = await fetch(
-        `http://192.168.8.166:3001/api/impresoras/${printerId}/reboot`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            tipo: tipoReinicio,
-            community_write: 'private'
-          })
-        }
-      );
 
       const data = await res.json();
 
       if (res.ok) {
-        Swal.fire({
+        await Swal.fire({
           icon: 'success',
           title: '✅ Reinicio iniciado',
           html: `
@@ -141,72 +281,38 @@ export default function PrinterTable({
           color: '#fff',
         });
 
-        // Actualizar estado después de 10 segundos
+        // 🔥 ACTUALIZAR ESTADO DESPUÉS DE 10s
         setTimeout(() => {
           checkSinglePrinterStatus(printerId);
         }, 10000);
-
       } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error en reinicio',
-          text: data.error || 'No se pudo reiniciar la impresora',
-          background: '#2c2c2c',
-          color: '#fff',
-          confirmButtonColor: '#d33',
-        });
+        throw new Error(data.error || 'No se pudo reiniciar la impresora');
       }
 
     } catch (error) {
       console.error('Error en reinicio:', error);
-      Swal.fire({
+      await Swal.fire({
         icon: 'error',
-        title: 'Error de conexión',
-        text: error.message,
+        title: 'Error',
+        text: error.message || 'Error al reiniciar la impresora',
         background: '#2c2c2c',
         color: '#fff',
         confirmButtonColor: '#d33',
       });
     } finally {
       setRebootingStates(prev => ({ ...prev, [printerId]: false }));
+      setRebootDialog({ visible: false, printer: null });
     }
-  };
+  }, []);
 
-  // 🔧 NUEVA FUNCIÓN: Mostrar opciones de reinicio
-  const showRebootOptions = (printer) => {
-    setSelectedPrinter(printer);
-    setShowRebootDialog(true);
-  };
-
-  // 🔧 FUNCIÓN: Ejecutar reinicio desde diálogo
-  const executeReboot = async (tipoReinicio) => {
-    if (!selectedPrinter) return;
-    
-    setShowRebootDialog(false);
-    await handleReboot(
-      selectedPrinter.id,
-      selectedPrinter.ip,
-      selectedPrinter.modelo,
-      tipoReinicio
-    );
-    setSelectedPrinter(null);
-  };
-
-  // 🔹 Función para verificar estado de una impresora específica (existente - SIN CAMBIOS)
-  const checkSinglePrinterStatus = async (printerId) => {
-    setLoadingStates((prev) => ({ ...prev, [printerId]: true }));
+  const checkSinglePrinterStatus = useCallback(async (printerId) => {
+    setLoadingStates(prev => ({ ...prev, [printerId]: true }));
 
     try {
-      const res = await fetch(
-        `http://192.168.8.166:3001/api/impresoras/${printerId}/status`
-      );
-
-      if (!res.ok) {
-        throw new Error("Error en la respuesta del servidor");
-      }
+      const res = await fetch(`${API_BASE_URL}/api/impresoras/${printerId}/status`);
+      if (!res.ok) throw new Error("Error en la respuesta del servidor");
 
       const data = await res.json();
-
       if (onUpdatePrinter) {
         onUpdatePrinter(printerId, {
           estado: data.estado,
@@ -214,12 +320,10 @@ export default function PrinterTable({
         });
       }
 
-      Swal.fire({
+      await Swal.fire({
         icon: "success",
         title: "Estado actualizado",
-        text: `Impresora ${
-          data.estado === "conectada" ? "conectada" : "desconectada"
-        }`,
+        text: `Impresora ${data.estado === "conectada" ? "conectada" : "desconectada"}`,
         timer: 2000,
         showConfirmButton: false,
         background: "#2c2c2c",
@@ -227,7 +331,7 @@ export default function PrinterTable({
       });
     } catch (error) {
       console.error("Error checking printer status:", error);
-      Swal.fire({
+      await Swal.fire({
         icon: "error",
         title: "Error de conexión",
         text: "No se pudo verificar el estado de la impresora",
@@ -236,30 +340,23 @@ export default function PrinterTable({
         confirmButtonColor: "#d33",
       });
     } finally {
-      setLoadingStates((prev) => ({ ...prev, [printerId]: false }));
+      setLoadingStates(prev => ({ ...prev, [printerId]: false }));
     }
-  };
+  }, [onUpdatePrinter]);
 
-  // 🔹 Función para verificar estado de TODAS las impresoras (existente - SIN CAMBIOS)
-  const checkAllPrintersStatus = async () => {
+  const checkAllPrintersStatus = useCallback(async () => {
     setLoadingAll(true);
 
     try {
-      const res = await fetch(
-        "http://192.168.8.166:3001/api/impresoras/status"
-      );
-
-      if (!res.ok) {
-        throw new Error("Error en la respuesta del servidor");
-      }
+      const res = await fetch(`${API_BASE_URL}/api/impresoras/status`);
+      if (!res.ok) throw new Error("Error en la respuesta del servidor");
 
       const data = await res.json();
-
       if (onUpdateAllPrinters) {
         onUpdateAllPrinters(data);
       }
 
-      Swal.fire({
+      await Swal.fire({
         icon: "success",
         title: "Estados actualizados",
         text: `Se verificaron ${data.length} impresoras`,
@@ -270,7 +367,7 @@ export default function PrinterTable({
       });
     } catch (error) {
       console.error("Error checking all printers status:", error);
-      Swal.fire({
+      await Swal.fire({
         icon: "error",
         title: "Error de conexión",
         text: "No se pudieron verificar los estados",
@@ -281,40 +378,13 @@ export default function PrinterTable({
     } finally {
       setLoadingAll(false);
     }
-  };
+  }, [onUpdateAllPrinters]);
 
-  // 🔹 Función para obtener el ícono y color del estado (existente - SIN CAMBIOS)
-  const getStatusInfo = (estado) => {
-    const status = estado || "verificando";
-
-    switch (status) {
-      case "conectada":
-        return {
-          icon: "🟢",
-          text: "Conectada",
-          class: "status-connected",
-        };
-      case "desconectada":
-        return {
-          icon: "🔴",
-          text: "Desconectada",
-          class: "status-disconnected",
-        };
-      default:
-        return {
-          icon: "🟡",
-          text: "Verificando",
-          class: "status-checking",
-        };
-    }
-  };
-
-  // 🔹 Función para subir archivo e imprimir (existente - SIN CAMBIOS)
-  const handlePrint = async (impresoraId, file, impresoraEstado) => {
+  const handlePrint = useCallback(async (impresoraId, file, impresoraEstado) => {
     if (!file) return;
 
     if (impresoraEstado === "desconectada") {
-      Swal.fire({
+      await Swal.fire({
         icon: "warning",
         title: "Impresora desconectada",
         text: "No se puede imprimir en una impresora desconectada",
@@ -325,66 +395,24 @@ export default function PrinterTable({
       return;
     }
 
+    // 🔥 SPINNER MÁS EFICIENTE
     const spinner = document.createElement("div");
-    spinner.innerHTML = `
-    <div style="
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    ">
-      <div style="
-        padding: 30px;
-        border-radius: 10px;
-        text-align: center;
-        color: white;
-      ">
-        <div style="
-          width: 50px;
-          height: 50px;
-          border: 5px solid #f3f3f3;
-          border-top: 5px solid #3085d6;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 0 auto 15px;
-        "></div>
-        <p>Enviando a imprimir...</p>
-      </div>
-    </div>
-    <style>
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    </style>
-  `;
-
+    spinner.className = "global-spinner";
     document.body.appendChild(spinner);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
+      const formData = new FormData();
+      formData.append("file", file);
+
       const res = await fetch(
-        `http://192.168.8.166:3001/api/impresoras/${impresoraId}/print`,
-        {
-          method: "POST",
-          body: formData,
-        }
+        `${API_BASE_URL}/api/impresoras/${impresoraId}/print`,
+        { method: "POST", body: formData }
       );
 
       const data = await res.json();
 
-      document.body.removeChild(spinner);
-
       if (res.ok) {
-        Swal.fire({
+        await Swal.fire({
           icon: "success",
           title: "Impresión enviada",
           text: "✅ Archivo enviado a imprimir correctamente",
@@ -392,100 +420,155 @@ export default function PrinterTable({
           showConfirmButton: false,
           background: "#2c2c2c",
           color: "#fff",
-          confirmButtonColor: "#3085d6",
         });
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error en impresión",
-          text: data.error || "Ocurrió un problema",
-          background: "#2c2c2c",
-          color: "#fff",
-          confirmButtonColor: "#d33",
-        });
+        throw new Error(data.error || "Ocurrió un problema");
       }
     } catch (error) {
-      document.body.removeChild(spinner);
-      Swal.fire({
+      console.error("Error al imprimir:", error);
+      await Swal.fire({
         icon: "error",
-        title: "Error de conexión",
+        title: "Error en impresión",
         text: error.message,
         background: "#2c2c2c",
         color: "#fff",
         confirmButtonColor: "#d33",
       });
+    } finally {
+      if (document.body.contains(spinner)) {
+        document.body.removeChild(spinner);
+      }
     }
-  };
+  }, []);
+
+  const showRebootOptions = useCallback((printer) => {
+    setRebootDialog({ visible: true, printer });
+  }, []);
+
+  const closeRebootDialog = useCallback(() => {
+    setRebootDialog({ visible: false, printer: null });
+  }, []);
+
+  // 🔥 RENDERIZAR FILAS DE LA TABLA
+  const renderTableRows = useMemo(() => 
+    filteredPrinters.map((impresora) => {
+      const isLoading = loadingStates[impresora.id];
+      const isRebooting = rebootingStates[impresora.id];
+
+      return (
+        <tr key={`${tipo}-${impresora.id}`}>
+          <td>
+            <div className="ip-cell">
+              <a
+                href={`http://${impresora.ip}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={impresora.estado === "desconectada" ? "link-disabled" : ""}
+              >
+                {impresora.ip}
+              </a>
+            </div>
+          </td>
+          <td>{impresora.sucursal}</td>
+          <td>
+            <a
+              href={impresora.drivers_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="model-link"
+            >
+              {impresora.modelo}
+            </a>
+          </td>
+          <td>
+            {impresora.estado === "desconectada" ? (
+              <span className="toner-unavailable">No disponible</span>
+            ) : impresora.toner_anterior <= 0 ? (
+              "No disponible"
+            ) : (
+              <TonerBar value={impresora.toner_anterior} />
+            )}
+          </td>
+          <td>
+            <div className="status-cell">
+              <StatusIndicator estado={impresora.estado} />
+              <RefreshButton
+                onClick={() => checkSinglePrinterStatus(impresora.id)}
+                loading={isLoading}
+                title="Verificar estado"
+                size="small"
+              />
+            </div>
+          </td>
+          <td>
+            <ActionButton
+              icon={BsInfoCircleFill}
+              onClick={() => onInfo(impresora)}
+              className="info-btn"
+              tooltip="Ver información"
+            />
+          </td>
+          <td>
+            <input
+              type="file"
+              id={`file-${impresora.id}`}
+              className="file-input"
+              onChange={(e) => handlePrint(impresora.id, e.target.files[0], impresora.estado)}
+              disabled={impresora.estado === "desconectada"}
+            />
+            <div className="action-buttons">
+              <ActionButton
+                icon={FaPowerOff}
+                onClick={() => showRebootOptions(impresora)}
+                className="reboot-btn"
+                tooltip={isRebooting ? "Reiniciando..." : "Reiniciar impresora"}
+                disabled={impresora.estado === "desconectada"}
+                loading={isRebooting}
+              />
+              <ActionButton
+                icon={FaPrint}
+                onClick={() => document.getElementById(`file-${impresora.id}`).click()}
+                className="print-btn"
+                tooltip="Imprimir archivo"
+                disabled={impresora.estado === "desconectada"}
+              />
+              <ActionButton
+                icon={FaRegEdit}
+                onClick={() => onEdit(impresora)}
+                className="edit-btn"
+                tooltip="Editar Impresora"
+              />
+              <ActionButton
+                icon={RiDeleteBin6Line}
+                onClick={() => onDelete(impresora.id)}
+                className="delete-btn"
+                tooltip="Eliminar Impresora"
+              />
+            </div>
+          </td>
+          <td>
+            <ActionButton
+              icon={FaCartShopping}
+              onClick={() => onCopy(impresora)}
+              className="pedido-btn"
+              tooltip="Generar pedido de tóner"
+            />
+          </td>
+        </tr>
+      );
+    }),
+    [filteredPrinters, loadingStates, rebootingStates, tipo, checkSinglePrinterStatus, handlePrint, showRebootOptions, onInfo, onEdit, onDelete, onCopy]
+  );
 
   return (
     <>
-      {/* 🔧 DIÁLOGO DE REINICIO CON ESTILOS ESPECÍFICOS */}
-      {showRebootDialog && selectedPrinter && (
-        <div style={styles.rebootDialogOverlay}>
-          <div style={styles.rebootDialog}>
-            <h3 style={styles.dialogTitle}>
-              <FaPowerOff style={{ marginRight: '10px' }} />
-              Reiniciar Impresora
-            </h3>
-            
-            <div style={styles.printerInfo}>
-              <p><strong>Modelo:</strong> {selectedPrinter.modelo}</p>
-              <p><strong>IP:</strong> {selectedPrinter.ip}</p>
-              <p><strong>Sucursal:</strong> {selectedPrinter.sucursal}</p>
-            </div>
-
-            <div style={styles.warningBox}>
-              <p style={styles.warningText}>
-                ⚠️ La impresora estará indisponible durante 2-3 minutos
-              </p>
-            </div>
-
-            <div style={styles.rebootOptions}>
-              <button 
-                style={styles.rebootOptionWarm}
-                onClick={() => executeReboot("warm")}
-                disabled={rebootingStates[selectedPrinter.id]}
-              >
-                <div style={styles.optionIcon}>🔄</div>
-                <div style={styles.optionContent}>
-                  <div style={styles.optionTitle}>Reinicio Suave</div>
-                  <div style={styles.optionDesc}>Recomendado para problemas menores</div>
-                </div>
-                {rebootingStates[selectedPrinter.id] && (
-                  <div style={styles.spinnerSmall}></div>
-                )}
-              </button>
-              
-              <button 
-                style={styles.rebootOptionCold}
-                onClick={() => executeReboot("cold")}
-                disabled={rebootingStates[selectedPrinter.id]}
-              >
-                <div style={styles.optionIcon}>❄️</div>
-                <div style={styles.optionContent}>
-                  <div style={styles.optionTitle}>Reinicio Completo</div>
-                  <div style={styles.optionDesc}>Como apagar y encender físicamente</div>
-                </div>
-                {rebootingStates[selectedPrinter.id] && (
-                  <div style={styles.spinnerSmall}></div>
-                )}
-              </button>
-            </div>
-            
-            <div style={styles.dialogActions}>
-              <button 
-                style={styles.cancelBtn}
-                onClick={() => {
-                  setShowRebootDialog(false);
-                  setSelectedPrinter(null);
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RebootDialog
+        visible={rebootDialog.visible}
+        printer={rebootDialog.printer}
+        onReboot={handleReboot}
+        onClose={closeRebootDialog}
+        loading={rebootDialog.printer ? rebootingStates[rebootDialog.printer.id] : false}
+      />
 
       <table className="dark-table">
         <thead>
@@ -493,20 +576,12 @@ export default function PrinterTable({
             <th>
               <div className="ip-header">
                 <span>IP</span>
-                <div className="tooltip-container">
-                  <button
-                    className="refresh-all-btn"
-                    onClick={checkAllPrintersStatus}
-                    disabled={loadingAll}
-                  >
-                    {loadingAll ? (
-                      <div className="spinner-small"></div>
-                    ) : (
-                      <FaSync size={14} />
-                    )}
-                  </button>
-                  <span className="tooltip">Actualizar todos los estados</span>
-                </div>
+                <RefreshButton
+                  onClick={checkAllPrintersStatus}
+                  loading={loadingAll}
+                  title="Actualizar todos los estados"
+                  size="large"
+                />
               </div>
             </th>
             <th>Sucursal</th>
@@ -519,169 +594,37 @@ export default function PrinterTable({
           </tr>
         </thead>
         <tbody>
-          {impresoras
-            .filter((i) => i.tipo === tipo)
-            .map((impresora, index) => {
-              const statusInfo = getStatusInfo(impresora.estado);
-              const isLoading = loadingStates[impresora.id];
-              const isRebooting = rebootingStates[impresora.id];
-
-              return (
-                <tr key={`${tipo}-${index}`}>
-                  <td>
-                    <div className="ip-cell">
-                      <a
-                        href={`http://${impresora.ip}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={
-                          impresora.estado === "desconectada"
-                            ? "link-disabled"
-                            : ""
-                        }
-                      >
-                        {impresora.ip}
-                      </a>
-                    </div>
-                  </td>
-                  <td>{impresora.sucursal}</td>
-                  <td>
-                    <a
-                      href={impresora.drivers_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {impresora.modelo}
-                    </a>
-                  </td>
-                  <td>
-                    {impresora.estado === "desconectada" ? (
-                      <span className="toner-unavailable">No disponible</span>
-                    ) : impresora.toner_anterior <= 0 ? (
-                      "No disponible"
-                    ) : (
-                      <TonerBar value={impresora.toner_anterior} />
-                    )}
-                  </td>
-                  <td>
-                    <div className="status-cell">
-                      <div className={`status-indicator ${statusInfo.class}`}>
-                        <span className="status-icon">{statusInfo.icon}</span>
-                        <span className="status-text">{statusInfo.text}</span>
-                      </div>
-                      <div className="tooltip-container">
-                        <button
-                          className="refresh-single-btn"
-                          onClick={() => checkSinglePrinterStatus(impresora.id)}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <div className="spinner-small"></div>
-                          ) : (
-                            <FaSync size={12} />
-                          )}
-                        </button>
-                        <span className="tooltip">Verificar estado</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="tooltip-container">
-                      <button
-                        className="info-button"
-                        onClick={() => onInfo(impresora)}
-                      >
-                        <BsInfoCircleFill />
-                      </button>
-                      <span className="tooltip">Ver información</span>
-                    </div>
-                  </td>
-                  <td>
-                    <input
-                      type="file"
-                      id={`file-${impresora.id}`}
-                      style={{ display: "none" }}
-                      onChange={(e) =>
-                        handlePrint(
-                          impresora.id,
-                          e.target.files[0],
-                          impresora.estado
-                        )
-                      }
-                      disabled={impresora.estado === "desconectada"}
-                    />
-                    <div className="action-buttons">
-                      {/* 🔧 BOTÓN DE REINICIO CON ESTILOS INLINE */}
-                      <div className="tooltip-container">
-                        <button
-                          style={styles.rebootBtn}
-                          onClick={() => showRebootOptions(impresora)}
-                          disabled={impresora.estado === "desconectada" || isRebooting}
-                        >
-                          {isRebooting ? (
-                            <div style={styles.spinnerSmall}></div>
-                          ) : (
-                            <FaPowerOff />
-                          )}
-                        </button>
-                        <span className="tooltip">
-                          {isRebooting ? "Reiniciando..." : "Reiniciar impresora"}
-                        </span>
-                      </div>
-                      
-                      {/* 🖨️ BOTONES EXISTENTES (mantienen sus estilos CSS) */}
-                      <div className="tooltip-container">
-                        <button
-                          className="print-btn"
-                          onClick={() =>
-                            document.getElementById(`file-${impresora.id}`).click()
-                          }
-                          disabled={impresora.estado === "desconectada"}
-                        >
-                          <FaPrint />
-                        </button>
-                        <span className="tooltip">Imprimir archivo</span>
-                      </div>
-                      <div className="tooltip-container">
-                        <button
-                          className="edit-btn"
-                          onClick={() => onEdit(impresora)}
-                        >
-                          <FaRegEdit />
-                        </button>
-                        <span className="tooltip">Editar Impresora</span>
-                      </div>
-                      <div className="tooltip-container">
-                        <button
-                          className="delete-btn"
-                          onClick={() => onDelete(impresora.id)}
-                        >
-                          <RiDeleteBin6Line />
-                        </button>
-                        <span className="tooltip">Eliminar Impresora</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="tooltip-container">
-                      <button
-                        className="pedido-btn"
-                        onClick={() => onCopy(impresora)}
-                      >
-                        <FaCartShopping />
-                      </button>
-                      <span className="tooltip">Generar pedido de tóner</span>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+          {renderTableRows}
         </tbody>
       </table>
 
-      {/* 🔧 ESTILOS INLINE SOLO PARA EL REINICIO */}
       <style jsx>{`
-        /* ESTILOS EXISTENTES (NO TOCAR) */
+        .dark-table {
+          width: 100%;
+          border-collapse: collapse;
+          background: #1e1e1e;
+          color: #fff;
+          font-size: 0.9rem;
+        }
+
+        .dark-table th,
+        .dark-table td {
+          padding: 12px 8px;
+          text-align: left;
+          border-bottom: 1px solid #333;
+        }
+
+        .dark-table th {
+          background: #2c2c2c;
+          font-weight: 600;
+          color: #ddd;
+        }
+
+        .dark-table tr:hover {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* HEADER STYLES */
         .ip-header {
           display: flex;
           align-items: center;
@@ -689,34 +632,42 @@ export default function PrinterTable({
           gap: 10px;
         }
 
-        .refresh-all-btn {
-          background: #4caf50;
-          color: white;
+        .refresh-btn {
+          background: rgba(255, 255, 255, 0.1);
           border: none;
-          padding: 6px 12px;
-          border-radius: 4px;
           cursor: pointer;
-          font-size: 12px;
+          border-radius: 4px;
           display: flex;
           align-items: center;
-          gap: 6px;
-          white-space: nowrap;
+          justify-content: center;
+          color: #fff;
+          transition: background-color 0.3s;
         }
 
-        .refresh-all-btn:hover:not(:disabled) {
+        .refresh-btn.small {
+          padding: 6px;
+        }
+
+        .refresh-btn.large {
+          padding: 6px 12px;
+          background: #4caf50;
+          font-size: 12px;
+        }
+
+        .refresh-btn.large:hover:not(:disabled) {
           background: #45a049;
         }
 
-        .refresh-all-btn:disabled {
+        .refresh-btn:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        .refresh-btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
         }
 
-        .ip-cell {
-          display: flex;
-          align-items: center;
-        }
-
+        /* STATUS STYLES */
         .status-cell {
           display: flex;
           align-items: center;
@@ -760,47 +711,90 @@ export default function PrinterTable({
           font-size: 11px;
         }
 
-        .spinner-small {
-          width: 14px;
-          height: 14px;
-          border: 2px solid #f3f3f3;
-          border-top: 2px solid #ffffff;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
+        /* ACTION BUTTONS */
+        .action-buttons {
+          display: flex;
+          gap: 8px;
+          align-items: center;
         }
 
-        .refresh-single-btn {
+        .action-btn {
           background: rgba(255, 255, 255, 0.1);
           border: none;
           cursor: pointer;
-          padding: 6px;
+          padding: 8px;
           border-radius: 4px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #fff;
+          transition: background-color 0.3s;
+          color: inherit;
         }
 
-        .refresh-single-btn:hover:not(:disabled) {
+        .action-btn:hover:not(:disabled) {
           background: rgba(255, 255, 255, 0.2);
         }
 
-        .refresh-single-btn:disabled {
+        .action-btn:disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
 
-        .link-disabled {
-          opacity: 0.5;
-          pointer-events: none;
-          text-decoration: line-through;
+        .reboot-btn {
+          background: rgba(255, 140, 0, 0.15);
+          color: #ff8c00;
         }
 
-        .toner-unavailable {
-          color: #888;
-          font-style: italic;
+        .reboot-btn:hover:not(:disabled) {
+          background: rgba(255, 140, 0, 0.3);
         }
 
+        .print-btn {
+          background: rgba(33, 150, 243, 0.15);
+          color: #2196f3;
+        }
+
+        .print-btn:hover:not(:disabled) {
+          background: rgba(33, 150, 243, 0.3);
+        }
+
+        .edit-btn {
+          background: rgba(255, 193, 7, 0.15);
+          color: #ffc107;
+        }
+
+        .edit-btn:hover:not(:disabled) {
+          background: rgba(255, 193, 7, 0.3);
+        }
+
+        .delete-btn {
+          background: rgba(244, 67, 54, 0.15);
+          color: #f44336;
+        }
+
+        .delete-btn:hover:not(:disabled) {
+          background: rgba(244, 67, 54, 0.3);
+        }
+
+        .info-btn {
+          background: rgba(156, 39, 176, 0.15);
+          color: #9c27b0;
+        }
+
+        .info-btn:hover:not(:disabled) {
+          background: rgba(156, 39, 176, 0.3);
+        }
+
+        .pedido-btn {
+          background: rgba(76, 175, 80, 0.15);
+          color: #4caf50;
+        }
+
+        .pedido-btn:hover:not(:disabled) {
+          background: rgba(76, 175, 80, 0.3);
+        }
+
+        /* TOOLTIP */
         .tooltip-container {
           position: relative;
           display: inline-block;
@@ -840,227 +834,233 @@ export default function PrinterTable({
           visibility: visible;
         }
 
-        .action-buttons {
+        /* MISC */
+        .ip-cell {
           display: flex;
-          gap: 8px;
           align-items: center;
         }
 
-        .info-button, .print-btn, .edit-btn, .delete-btn, .pedido-btn {
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          cursor: pointer;
-          padding: 8px;
-          border-radius: 4px;
+        .model-link {
+          color: #64b5f6;
+          text-decoration: none;
+        }
+
+        .model-link:hover {
+          text-decoration: underline;
+        }
+
+        .link-disabled {
+          opacity: 0.5;
+          pointer-events: none;
+          text-decoration: line-through;
+        }
+
+        .toner-unavailable {
+          color: #888;
+          font-style: italic;
+        }
+
+        .file-input {
+          display: none;
+        }
+
+        .spinner-small {
+          width: 14px;
+          height: 14px;
+          border: 2px solid #f3f3f3;
+          border-top: 2px solid #ffffff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        /* REBOOT DIALOG STYLES */
+        .reboot-dialog-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          justify-content: center;
+          alignItems: center;
+          z-index: 1000;
+        }
+
+        .reboot-dialog {
+          background: #2c2c2c;
+          padding: 25px;
+          border-radius: 10px;
+          width: 400px;
+          max-width: 90%;
+          border: 1px solid #444;
+          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .dialog-title {
+          margin: 0 0 20px 0;
+          color: #fff;
+          font-size: 1.2rem;
+          text-align: center;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: background-color 0.3s;
         }
 
-        .info-button:hover:not(:disabled),
-        .print-btn:hover:not(:disabled),
-        .edit-btn:hover:not(:disabled),
-        .pedido-btn:hover:not(:disabled) {
-          background: rgba(255, 255, 255, 0.2);
+        .dialog-icon {
+          margin-right: 10px;
         }
 
-        .delete-btn:hover:not(:disabled) {
-          background: rgba(244, 67, 54, 0.3);
+        .printer-info {
+          margin: 15px 0;
+          padding: 15px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
+          color: #ccc;
+          font-size: 0.9rem;
         }
 
-        .info-button:disabled,
-        .print-btn:disabled,
-        .edit-btn:disabled,
-        .delete-btn:disabled,
-        .pedido-btn:disabled {
-          opacity: 0.5;
+        .warning-box {
+          margin: 15px 0;
+          padding: 10px;
+          background: rgba(255, 140, 0, 0.1);
+          border: 1px solid rgba(255, 140, 0, 0.3);
+          border-radius: 6px;
+          text-align: center;
+        }
+
+        .warning-text {
+          color: #ff8c00;
+          font-size: 0.9rem;
+          margin: 0;
+        }
+
+        .reboot-options {
+          margin: 20px 0;
+        }
+
+        .reboot-option {
+          width: 100%;
+          padding: 15px;
+          margin: 10px 0;
+          border: none;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          cursor: pointer;
+          transition: all 0.3s;
+          text-align: left;
+        }
+
+        .reboot-option.warm {
+          background: rgba(255, 140, 0, 0.1);
+          color: #ff8c00;
+        }
+
+        .reboot-option.cold {
+          background: rgba(0, 150, 255, 0.1);
+          color: #0096ff;
+        }
+
+        .reboot-option:hover:not(:disabled) {
+          filter: brightness(1.2);
+        }
+
+        .reboot-option:disabled {
+          opacity: 0.6;
           cursor: not-allowed;
         }
 
+        .option-icon {
+          font-size: 24px;
+        }
+
+        .option-content {
+          flex: 1;
+        }
+
+        .option-title {
+          display: block;
+          font-size: 1rem;
+          font-weight: bold;
+          margin-bottom: 3px;
+        }
+
+        .option-desc {
+          color: #aaa;
+          font-size: 0.8rem;
+        }
+
+        .dialog-actions {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 20px;
+        }
+
+        .cancel-btn {
+          background: #666;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background 0.3s;
+        }
+
+        .cancel-btn:hover:not(:disabled) {
+          background: #777;
+        }
+
+        .cancel-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        /* GLOBAL SPINNER */
+        .global-spinner {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+        }
+
+        .global-spinner::before {
+          content: '';
+          width: 50px;
+          height: 50px;
+          border: 5px solid #f3f3f3;
+          border-top: 5px solid #3085d6;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        /* SWAL CUSTOM SPINNER */
+        .custom-spinner {
+          width: 50px;
+          height: 50px;
+          border: 4px solid rgba(255, 255, 255, 0.1);
+          border-top: 4px solid #ff8c00;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 15px;
+        }
+
+        /* ANIMATIONS */
         @keyframes spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </>
   );
 }
 
-// 🔧 ESTILOS INLINE PARA EL BOTÓN Y MODAL DE REINICIO
-const styles = {
-  // Botón de reinicio en la tabla
-  rebootBtn: {
-    background: 'rgba(255, 140, 0, 0.15)',
-    color: '#ff8c00',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '8px',
-    borderRadius: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.3s',
-  },
-
-  // Modal overlay
-  rebootDialogOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    background: 'rgba(0, 0, 0, 0.8)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-
-  // Modal container
-  rebootDialog: {
-    background: '#2c2c2c',
-    padding: '25px',
-    borderRadius: '10px',
-    width: '400px',
-    maxWidth: '90%',
-    border: '1px solid #444',
-    boxShadow: '0 5px 20px rgba(0, 0, 0, 0.5)',
-  },
-
-  // Título del modal
-  dialogTitle: {
-    margin: '0 0 20px 0',
-    color: '#fff',
-    fontSize: '1.2rem',
-    textAlign: 'center',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // Información de la impresora
-  printerInfo: {
-    margin: '15px 0',
-    padding: '15px',
-    background: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: '8px',
-  },
-
-  printerInfoText: {
-    margin: '5px 0',
-    color: '#ccc',
-    fontSize: '0.9rem',
-  },
-
-  // Caja de advertencia
-  warningBox: {
-    margin: '15px 0',
-    padding: '10px',
-    background: 'rgba(255, 140, 0, 0.1)',
-    border: '1px solid rgba(255, 140, 0, 0.3)',
-    borderRadius: '6px',
-    textAlign: 'center',
-  },
-
-  warningText: {
-    color: '#ff8c00',
-    fontSize: '0.9rem',
-    margin: 0,
-  },
-
-  // Opciones de reinicio
-  rebootOptions: {
-    margin: '20px 0',
-  },
-
-  // Opción de reinicio suave
-  rebootOptionWarm: {
-    width: '100%',
-    padding: '15px',
-    margin: '10px 0',
-    border: 'none',
-    borderRadius: '8px',
-    background: 'rgba(255, 140, 0, 0.1)',
-    color: '#ff8c00',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    textAlign: 'left',
-  },
-
-  // Opción de reinicio completo
-  rebootOptionCold: {
-    width: '100%',
-    padding: '15px',
-    margin: '10px 0',
-    border: 'none',
-    borderRadius: '8px',
-    background: 'rgba(0, 150, 255, 0.1)',
-    color: '#0096ff',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    textAlign: 'left',
-  },
-
-  // Icono de opción
-  optionIcon: {
-    fontSize: '24px',
-  },
-
-  // Contenido de opción
-  optionContent: {
-    flex: 1,
-  },
-
-  // Título de opción
-  optionTitle: {
-    display: 'block',
-    fontSize: '1rem',
-    fontWeight: 'bold',
-    marginBottom: '3px',
-  },
-
-  // Descripción de opción
-  optionDesc: {
-    color: '#aaa',
-    fontSize: '0.8rem',
-  },
-
-  // Spinner pequeño
-  spinnerSmall: {
-    width: '16px',
-    height: '16px',
-    border: '2px solid rgba(255, 255, 255, 0.3)',
-    borderTop: '2px solid #fff',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
-  },
-
-  // Botones de acción del modal
-  dialogActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginTop: '20px',
-  },
-
-  // Botón cancelar
-  cancelBtn: {
-    background: '#666',
-    color: 'white',
-    border: 'none',
-    padding: '10px 20px',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    transition: 'background 0.3s',
-  },
-};
+// 🔥 MEMOIZAR EL COMPONENTE COMPLETO
+export default memo(PrinterTable);
