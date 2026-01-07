@@ -22,6 +22,7 @@ export const useRUCValidation = () => {
 
     try {
       const rucBase = extraerRUCBase(ruc);
+      console.log("🔍 Buscando RUC base:", rucBase);
 
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/clientes?codempresa=15&codclienteerp=&razonsocial=&ruc=${encodeURIComponent(
@@ -38,37 +39,74 @@ export const useRUCValidation = () => {
       }
 
       const data = await response.json();
-
       console.log("📊 Resultados API RUC:", data);
 
-      // 🔥 BUSCAR PRIMERO EL CLIENTE ACTIVO
       if (data && data.length > 0) {
-        // Priorizar cliente activo
-        const clienteActivo = data.find((cliente) => cliente.activo === true);
+        // 🔥 FILTRAR POR COINCIDENCIA EXACTA DEL RUC (o inicio del RUC)
+        const clientesFiltrados = data.filter((cliente) => {
+          // Extraer la base del RUC del cliente (similar a tu función extraerRUCBase)
+          const rucCliente = cliente.ruc || "";
+          const rucClienteBase = rucCliente.split("-")[0]; // Tomar solo la parte antes del guión si existe
 
-        if (clienteActivo) {
-          console.log("✅ Cliente ACTIVO encontrado:", {
-            codCliente: clienteActivo.codclienteerp,
-            activo: clienteActivo.activo,
-            razonSocial: clienteActivo.razonsocial,
-            canal: clienteActivo.canal,
+          // Comparar exactamente las bases de RUC
+          return rucClienteBase === rucBase;
+        });
+
+        console.log(
+          "✅ Clientes filtrados por coincidencia exacta:",
+          clientesFiltrados
+        );
+
+        if (clientesFiltrados.length > 0) {
+          // Buscar primero cliente activo entre los filtrados
+          const clienteActivo = clientesFiltrados.find(
+            (cliente) => cliente.activo === true
+          );
+
+          if (clienteActivo) {
+            console.log("✅ Cliente ACTIVO encontrado:", {
+              codCliente: clienteActivo.codclienteerp,
+              activo: clienteActivo.activo,
+              razonSocial: clienteActivo.razonsocial,
+              canal: clienteActivo.canal,
+              ruc: clienteActivo.ruc,
+            });
+            return clienteActivo;
+          }
+
+          // Si no hay activo, tomar el primero inactivo
+          const clienteInactivo = clientesFiltrados[0];
+          console.log("⚠️ Cliente INACTIVO encontrado:", {
+            codCliente: clienteInactivo.codclienteerp,
+            activo: clienteInactivo.activo,
+            razonSocial: clienteInactivo.razonsocial,
+            canal: clienteInactivo.canal,
+            ruc: clienteInactivo.ruc,
           });
-          return clienteActivo;
+          return clienteInactivo;
+        } else {
+          // OPCIÓN 2: Si no hay coincidencia exacta, intentar buscar por inicio del RUC
+          const clientesPorInicio = data.filter((cliente) => {
+            const rucCliente = cliente.ruc || "";
+            return rucCliente.startsWith(rucBase);
+          });
+
+          if (clientesPorInicio.length > 0) {
+            // Misma lógica de prioridad (activo primero)
+            const clienteActivo = clientesPorInicio.find(
+              (cliente) => cliente.activo === true
+            );
+            if (clienteActivo) return clienteActivo;
+            return clientesPorInicio[0];
+          }
         }
 
-        // Si no hay activo, tomar el primero (que será inactivo)
-        const clienteInactivo = data[0];
-        console.log("⚠️ Cliente INACTIVO encontrado:", {
-          codCliente: clienteInactivo.codclienteerp,
-          activo: clienteInactivo.activo,
-          razonSocial: clienteInactivo.razonsocial,
-          canal: clienteInactivo.canal,
-        });
-        return clienteInactivo;
+        console.log("❌ No se encontró cliente con RUC base exacto:", rucBase);
+        return null;
       }
 
       console.log("❌ No se encontró cliente con RUC:", rucBase);
-      return null; // No se encontró cliente
+      return null;
     } catch (error) {
       console.error("Error buscando cliente por RUC:", error);
       setErrorRUC(`Error al validar RUC: ${error.message}`);
@@ -77,7 +115,6 @@ export const useRUCValidation = () => {
       setValidandoRUC(false);
     }
   };
-
   // 🔥 FUNCIÓN PRINCIPAL DE VALIDACIÓN MEJORADA
   const validarRUC = async (ruc, esAlta = true, codClienteActual = null) => {
     const rucBase = extraerRUCBase(ruc);
