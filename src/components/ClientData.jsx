@@ -46,15 +46,28 @@ const ClientData = ({
     { value: "6", label: "Sábado" }
   ];
 
+  // 🔥 FUNCIÓN PARA NORMALIZAR DÍA DE VISITA
+  const normalizarDiaVisita = (valor) => {
+    if (valor === null || valor === undefined || valor === '') {
+      return '';
+    }
+    // Si es número (incluyendo 0), convertirlo a string
+    if (typeof valor === 'number') {
+      return valor.toString();
+    }
+    // Si ya es string, mantenerlo
+    return valor;
+  };
+
   // 🔥 FUNCIÓN PARA OBTENER EL NOMBRE DEL DÍA
   const obtenerNombreDiaVisita = (codigoDia) => {
-    const dia = opcionesDiasVisita.find(d => d.value === codigoDia?.toString());
+    const dia = opcionesDiasVisita.find(d => d.value === normalizarDiaVisita(codigoDia));
     return dia ? dia.label : `Día ${codigoDia}`;
   };
 
   // 🔥 FUNCIÓN PARA OBTENER EL VALOR NUMÉRICO PARA COPIAR
   const getValorDiaVisitaParaCopiar = (diaData) => {
-    return diaData?.diavisita?.toString() || "";
+    return normalizarDiaVisita(diaData?.diavisita) || "";
   };
 
   // 🔥 FUNCIÓN PARA MOSTRAR EL DÍA EN MODO VISTA
@@ -235,15 +248,32 @@ const ClientData = ({
       const sistemaNormalizado = normalizarValor(valorSistema);
       const censoNormalizado = normalizarValor(valorCenso);
       
-      console.log(`📊 ${campo}:`, {
-        sistema: sistemaNormalizado,
-        censo: censoNormalizado,
-        sonDiferentes: sistemaNormalizado !== censoNormalizado
-      });
-      
-      if (sistemaNormalizado !== censoNormalizado) {
-        cambios.add(campo);
-        console.log(`🔄 CAMBIO DETECTADO en ${campo}: "${sistemaNormalizado}" → "${censoNormalizado}"`);
+      // Caso especial para diavisita - manejar el valor 0 correctamente
+      if (campo === 'diavisita') {
+        const sistemaDia = valorSistema !== null && valorSistema !== undefined ? valorSistema.toString() : '';
+        const censoDia = valorCenso !== null && valorCenso !== undefined ? valorCenso.toString() : '';
+        
+        console.log(`📊 ${campo}:`, {
+          sistema: sistemaDia,
+          censo: censoDia,
+          sonDiferentes: sistemaDia !== censoDia
+        });
+        
+        if (sistemaDia !== censoDia) {
+          cambios.add(campo);
+          console.log(`🔄 CAMBIO DETECTADO en ${campo}: "${sistemaDia}" → "${censoDia}"`);
+        }
+      } else {
+        console.log(`📊 ${campo}:`, {
+          sistema: sistemaNormalizado,
+          censo: censoNormalizado,
+          sonDiferentes: sistemaNormalizado !== censoNormalizado
+        });
+        
+        if (sistemaNormalizado !== censoNormalizado) {
+          cambios.add(campo);
+          console.log(`🔄 CAMBIO DETECTADO en ${campo}: "${sistemaNormalizado}" → "${censoNormalizado}"`);
+        }
       }
     });
 
@@ -322,7 +352,8 @@ const ClientData = ({
         codlistaprecioerp: clienteData.codlistaprecioerp || "",
         codvendedorerp: clienteData.codvendedorerp || "",
         codsupervisorerp: clienteData.codsupervisorerp || "",
-        diavisita: clienteData.diavisita || "",
+        // 🔥 CORRECCIÓN: Usar función de normalización para diavisita
+        diavisita: normalizarDiaVisita(clienteData.diavisita),
         frecuencia: clienteData.frecuencia || "",
         latitud: clienteData.latitud || "",
         longitud: clienteData.longitud || "",
@@ -334,6 +365,7 @@ const ClientData = ({
         codsubzonaerp: clienteData.zonaserp?.codsubzonaerp || clienteData.codsubzonaerp || "",
       };
       
+      console.log("📝 Diavisita inicializado:", nuevosDatos.diavisita);
       setFormData(nuevosDatos);
       // Detectar cambios entre censo y sistema ERP
       detectarCambios(nuevosDatos);
@@ -534,7 +566,8 @@ const ClientData = ({
         codlistaprecioerp: datos.codlistaprecioerp,
         codvendedorerp: datos.codvendedorerp,
         codsupervisorerp: datos.codsupervisorerp,
-        diavisita: datos.diavisita ? parseInt(datos.diavisita) : null,
+        // 🔥 CORRECCIÓN: Manejar diavisita correctamente (incluyendo 0)
+        diavisita: datos.diavisita !== undefined && datos.diavisita !== "" ? parseInt(datos.diavisita) : null,
         frecuencia: datos.frecuencia ? parseInt(datos.frecuencia) : null,
         
         // Campos de canales
@@ -578,7 +611,7 @@ const ClientData = ({
         canaleserp: canalSeleccionado || clienteData.canaleserp
       };
 
-      console.log("Enviando datos a API:", payload);
+      console.log("Enviando datos a API - diavisita:", payload.diavisita, "Tipo:", typeof payload.diavisita);
 
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/censo`,
@@ -685,7 +718,8 @@ const ClientData = ({
         codlistaprecioerp: clienteData.codlistaprecioerp || "",
         codvendedorerp: clienteData.codvendedorerp || "",
         codsupervisorerp: clienteData.codsupervisorerp || "",
-        diavisita: clienteData.diavisita || "",
+        // 🔥 CORRECCIÓN: Usar función de normalización
+        diavisita: normalizarDiaVisita(clienteData.diavisita),
         frecuencia: clienteData.frecuencia || "",
         latitud: clienteData.latitud || "",
         longitud: clienteData.longitud || "",
@@ -704,6 +738,8 @@ const ClientData = ({
   const handleSave = async () => {
     setLoading(true);
     try {
+      console.log("💾 Guardando datos - diavisita original:", formData.diavisita);
+      
       const datosFormateados = {
         ...formData,
         razonsocial: formData.razonsocial ? formData.razonsocial.toUpperCase().trim() : "",
@@ -715,7 +751,8 @@ const ClientData = ({
         estado: formData.estado || "TEMP",
         latitud: formData.latitud ? formData.latitud.toString() : "",
         longitud: formData.longitud ? formData.longitud.toString() : "",
-        diavisita: formData.diavisita ? formData.diavisita.toString() : "",
+        // 🔥 CORRECCIÓN: Mantener diavisita como string usando normalización
+        diavisita: normalizarDiaVisita(formData.diavisita),
         frecuencia: formData.frecuencia ? formData.frecuencia.toString() : "",
         canal: formData.canal || clienteData.canal,
         subcanal: formData.subcanal || clienteData.subcanal,
@@ -724,7 +761,7 @@ const ClientData = ({
         codsubzonaerp: formData.codsubzonaerp || clienteData.zonaserp?.codsubzonaerp,
       };
       
-      console.log("Datos formateados para guardar:", datosFormateados);
+      console.log("📤 Datos formateados para guardar - diavisita:", datosFormateados.diavisita);
       
       const resultado = await guardarDatosEnAPI(datosFormateados);
       
@@ -875,12 +912,13 @@ const ClientData = ({
       }
 
       if (fieldName === "diavisita") {
+        console.log("🎯 Renderizando día de visita en edición:", formData.diavisita);
         return (
           <div className={`validator-data-row editable ${claseCambio}`}>
             <span className="validator-label">{label}</span>
             <div className="validator-edit-field-container">
               <SelectBuscable
-                value={formData[fieldName] || ""}
+                value={normalizarDiaVisita(formData[fieldName]) || ""}
                 onChange={(nuevoValor) => {
                   handleSelectChange({
                     target: {
