@@ -465,7 +465,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
           );
 
           if (!subcanalValido) {
-            nuevasAdvertencias.push(
+            nuevosErrores.push(
               `La combinación de subcanales puede no ser válida canal: ${dataFormateado.canaleserp.nombrecanal} subcanal1: ${dataFormateado.canaleserp.nombresubcanal} // subcanal2: ${dataFormateado.canaleserp.nombresubcanal2} `
             );
           }
