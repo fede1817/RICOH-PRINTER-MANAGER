@@ -26,7 +26,10 @@ const ModalRUC = ({
   // 🔥 PROXY PRINCIPAL
   const MAIN_PROXY = 'corsproxy.io';
 
-  // 🔥 FUNCIÓN OPTIMIZADA
+  // 🔗 URL BASE DE LA NUEVA API
+  const API_BASE_URL = 'https://fast.turuc.com.py/api/contribuyente/table';
+
+  // 🔥 FUNCIÓN OPTIMIZADA PARA LA NUEVA API
   const fetchRucData = useCallback(async (ruc) => {
     if (!ruc || ruc.trim() === '') {
       setError('No hay RUC para consultar');
@@ -42,13 +45,41 @@ const ModalRUC = ({
     const rucFormateado = ruc.trim();
     
     try {
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.guarani.app/ruc-data/buscar?termino=${rucFormateado}`)}`;
+      // 🔧 Construir los parámetros específicos para esta API
+      const params = new URLSearchParams({
+        draw: '1',
+        'columns[0][data]': 'ruc',
+        'columns[0][name]': '',
+        'columns[0][searchable]': 'true',
+        'columns[0][orderable]': 'false',
+        'columns[0][search][value]': '',
+        'columns[0][search][regex]': 'false',
+        'columns[1][data]': 'razonSocial',
+        'columns[1][name]': '',
+        'columns[1][searchable]': 'true',
+        'columns[1][orderable]': 'false',
+        'columns[1][search][value]': '',
+        'columns[1][search][regex]': 'false',
+        'columns[2][data]': 'estado',
+        'columns[2][name]': '',
+        'columns[2][searchable]': 'true',
+        'columns[2][orderable]': 'false',
+        'columns[2][search][value]': '',
+        'columns[2][search][regex]': 'false',
+        start: '0',
+        length: '10',
+        search: rucFormateado, // ← Aquí va el RUC que buscamos
+        _: Date.now().toString() // Timestamp para evitar caché
+      });
+
+      const apiUrl = `${API_BASE_URL}?${params.toString()}`;
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
       
-      console.log(`🚀 Consultando RUC con ${MAIN_PROXY}:`, proxyUrl);
+      console.log(`🚀 Consultando RUC con nueva API:`, apiUrl);
       setProxyUsed(MAIN_PROXY);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       
       const response = await fetch(proxyUrl, {
         method: 'GET',
@@ -74,25 +105,39 @@ const ModalRUC = ({
       try {
         data = JSON.parse(text);
         
-        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
-          setRucData(data.data[0]);
-        } else if (data.data && data.data.length === 0) {
-          setError('No se encontraron datos para este RUC');
-        } else if (data.message) {
-          setError(data.message);
+        console.log("📊 Respuesta de la API:", data);
+        
+        // 🔍 Analizar la estructura de respuesta
+        if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+          const result = data.data[0];
+          
+          // 🎯 Extraer solo los datos necesarios
+          const formattedData = {
+            ruc: result.ruc || `${result.doc}-${result.dv}`, // Usar ruc o construir desde doc y dv
+            razon_social: result.razonSocial || '',
+            estado: result.estado || ''
+          };
+          
+          setRucData(formattedData);
+          console.log("✅ Datos formateados:", formattedData);
+          
+        } else if (data.recordsFiltered === 0) {
+          setError(`No se encontró el RUC: ${rucFormateado}`);
         } else {
-          setError('Respuesta inesperada de la API');
+          setError('La API no devolvió datos válidos');
         }
       } catch (parseError) {
         console.error("Error parseando JSON:", parseError);
-        setError('Error al procesar la respuesta');
+        setError('Error al procesar la respuesta de la API');
       }
       
     } catch (error) {
       console.error("Error en consulta:", error);
       
       if (error.name === 'AbortError') {
-        setError('La consulta tardó demasiado (más de 2 segundos)');
+        setError('La consulta tardó demasiado (más de 5 segundos)');
+      } else if (error.message.includes('Failed to fetch')) {
+        setError('Error de conexión. Verifica tu internet o intenta más tarde.');
       } else {
         setError(`Error: ${error.message}`);
       }
@@ -125,7 +170,6 @@ const ModalRUC = ({
 
   // 🔥 FUNCIONES PARA DRAGGING
   const handleDragStart = useCallback((e) => {
-    // Solo permitir dragging en el header o en el handle
     const isHeader = e.target.closest('.modal-ruc-header');
     const isDragHandle = e.target.closest('.modal-ruc-drag-handle');
     const isCloseBtn = e.target.closest('.modal-ruc-close-btn');
@@ -143,7 +187,6 @@ const ModalRUC = ({
     modalRef.current.classList.add('dragging-active');
     modalRef.current.style.cursor = 'grabbing';
     
-    // Prevenir selección de texto mientras se arrastra
     document.body.style.userSelect = 'none';
     
     e.preventDefault();
@@ -158,7 +201,6 @@ const ModalRUC = ({
       y: e.clientY - dragOffset.current.y
     };
     
-    // Limitar al área visible del backdrop
     const backdropRect = backdropRef.current.getBoundingClientRect();
     const modalRect = modalRef.current.getBoundingClientRect();
     
@@ -179,7 +221,6 @@ const ModalRUC = ({
     modalRef.current?.classList.remove('dragging-active');
     modalRef.current?.style.removeProperty('cursor');
     
-    // Restaurar selección de texto
     document.body.style.userSelect = '';
   }, []);
 
@@ -206,7 +247,7 @@ const ModalRUC = ({
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
-      handleDragEnd(); // Asegurar reset
+      handleDragEnd();
     };
   }, [isOpen, handleDragMove, handleDragEnd]);
 
@@ -231,7 +272,6 @@ const ModalRUC = ({
   useEffect(() => {
     if (isOpen) {
       initialPosSet.current = false;
-      // Usar timeout para asegurar que el DOM esté renderizado
       setTimeout(centerModal, 10);
     } else {
       initialPosSet.current = false;
@@ -354,9 +394,20 @@ const ModalRUC = ({
             
             <div className="modal-ruc-data-item">
               <label>Estado</label>
-              <span className="modal-ruc-data-value">{rucData.estado || 'No especificado'}</span>
+              <span className={`modal-ruc-data-value ${rucData.estado === 'ACTIVO' ? 'estado-activo' : 'estado-inactivo'}`}>
+                {rucData.estado || 'No especificado'}
+              </span>
             </div>
           </div>
+          
+          {rawApiResponse && (
+            <div className="modal-ruc-raw-data">
+              <details>
+                <summary>Ver respuesta cruda de la API</summary>
+                <pre>{JSON.stringify(JSON.parse(rawApiResponse), null, 2)}</pre>
+              </details>
+            </div>
+          )}
           
           {isEditing && (
             <div className="modal-ruc-actions">
@@ -402,7 +453,6 @@ const ModalRUC = ({
       className="modal-ruc-backdrop-clear" 
       onClick={handleBackdropClick}
       onMouseDown={(e) => {
-        // Iniciar dragging si se hace clic en el header
         if (e.target.closest('.modal-ruc-header') || e.target.closest('.modal-ruc-drag-handle')) {
           handleDragStart(e);
         }
@@ -427,7 +477,7 @@ const ModalRUC = ({
             <div>
               <h3>
                 <FaEye className="modal-ruc-title-icon" />
-                Verificación de RUC
+                Verificación de RUC - Nueva API
               </h3>
               <p className="modal-ruc-subtitle">RUC consultado: <strong>{rucValue || 'No disponible'}</strong></p>
             </div>
