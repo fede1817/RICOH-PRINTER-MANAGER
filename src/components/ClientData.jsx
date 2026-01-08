@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import SelectBuscable from './SelectBuscable';
-import "./Censo.css"; // Cambiar por Validator.css
+import { FaEye } from 'react-icons/fa';
+import "./Censo.css";
+import ModalRUC from './ModalRUC';
 
 const ClientData = ({ 
   clienteData, 
@@ -35,6 +37,10 @@ const ClientData = ({
   const [zonasUnicas, setZonasUnicas] = useState([]);
   const [subzonasFiltradas, setSubzonasFiltradas] = useState([]);
 
+  // 🔥 ESTADOS PARA EL MODAL DE RUC (SIMPLIFICADOS)
+  const [showRucModal, setShowRucModal] = useState(false);
+  const [selectedRuc, setSelectedRuc] = useState('');
+
   // 🔥 OPCIONES PARA DÍAS DE VISITA
   const opcionesDiasVisita = [
     { value: "0", label: "Domingo" },
@@ -46,16 +52,60 @@ const ClientData = ({
     { value: "6", label: "Sábado" }
   ];
 
+  // 🔥 FUNCIÓN PARA ABRIR EL MODAL DE RUC
+  const handleOpenRucModal = (rucValue) => {
+    if (!rucValue || rucValue.trim() === '') {
+      Swal.fire({
+        title: 'RUC vacío',
+        text: 'No hay RUC para verificar',
+        icon: 'warning',
+        confirmButtonText: 'Entendido',
+        background: "#1f2937",
+        color: "#fff"
+      });
+      return;
+    }
+
+    setSelectedRuc(rucValue);
+    setShowRucModal(true);
+  };
+
+  // 🔥 FUNCIÓN PARA CERRAR EL MODAL DE RUC
+  const handleCloseRucModal = () => {
+    setShowRucModal(false);
+    setSelectedRuc('');
+  };
+
+  // 🔥 FUNCIÓN PARA USAR DATOS DEL RUC EN EL FORMULARIO
+  const handleUsarDatosRuc = (rucData) => {
+    if (rucData && isEditing) {
+      setFormData(prev => ({
+        ...prev,
+        razonsocial: rucData.razon_social ? rucData.razon_social.toUpperCase() : prev.razonsocial,
+        ruc: rucData.ruc || prev.ruc
+      }));
+      
+      Swal.fire({
+        title: 'Datos actualizados',
+        text: 'Los datos del RUC se han copiado al formulario',
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        background: "#1f2937",
+        color: "#fff",
+        timer: 2000,
+        timerProgressBar: true
+      });
+    }
+  };
+
   // 🔥 FUNCIÓN PARA NORMALIZAR DÍA DE VISITA
   const normalizarDiaVisita = (valor) => {
     if (valor === null || valor === undefined || valor === '') {
       return '';
     }
-    // Si es número (incluyendo 0), convertirlo a string
     if (typeof valor === 'number') {
       return valor.toString();
     }
-    // Si ya es string, mantenerlo
     return valor;
   };
 
@@ -95,7 +145,6 @@ const ClientData = ({
         const data = await response.json();
         setZonasData(data);
         
-        // Extraer zonas únicas
         const zonasUnicas = [...new Set(data.map(item => ({
           codzonaerp: item.codzonaerp,
           nombrezona: item.nombrezona
@@ -104,7 +153,6 @@ const ClientData = ({
         );
         
         setZonasUnicas(zonasUnicas);
-        console.log("📊 Datos de zonas cargados:", zonasUnicas);
       }
     } catch (error) {
       console.error("Error cargando datos de zonas:", error);
@@ -126,7 +174,6 @@ const ClientData = ({
       
       setSubzonasFiltradas(subzonas);
       
-      // Si solo hay una subzona, seleccionarla automáticamente
       if (subzonas.length === 1 && !formData.codsubzonaerp) {
         setFormData(prev => ({
           ...prev,
@@ -148,8 +195,6 @@ const ClientData = ({
     try {
       const credentials = btoa(`${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`);
       
-      console.log("🔍 Buscando cliente en ERP:", codClienteERP);
-
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/clientes?codempresa=15&codclienteerp=${codClienteERP}`,
         {
@@ -166,25 +211,12 @@ const ClientData = ({
       }
 
       const data = await response.json();
-      console.log("📊 Respuesta API Cliente ERP:", data);
-
-      // Buscar el cliente activo o tomar el primero
       const clienteActivo = data.find(cliente => cliente.activo === true) || data[0];
       
       if (clienteActivo) {
-        console.log("✅ Cliente ERP encontrado:", {
-          codCliente: clienteActivo.codclienteerp,
-          razonSocial: clienteActivo.razonsocial,
-          canal: clienteActivo.canal,
-          zonaerp: clienteActivo.zonaerp,
-          codzonaerp: clienteActivo.codzonaerp,
-          zonaserp: clienteActivo.zonaserp,
-          activo: clienteActivo.activo
-        });
         return clienteActivo;
       }
 
-      console.log("❌ No se encontró cliente en ERP");
       return null;
     } catch (error) {
       console.error("Error fetching cliente ERP:", error);
@@ -194,139 +226,82 @@ const ClientData = ({
 
   // 🔥 FUNCIÓN MEJORADA PARA DETECTAR CAMBIOS ENTRE CENSO Y ERP
   const detectarCambios = async (datosCenso) => {
-    console.log("🔍 Iniciando detección de cambios...");
-    
     const cambios = new Set();
 
-    // Solo detectar cambios si es una actualización (tiene cliente en ERP)
     const esActualizacion = clienteData?.cliente?.concatcliente;
     const codClienteERP = clienteData?.cliente?.codclienteerp;
 
-    console.log("📊 Información del cliente:", {
-      esActualizacion,
-      codClienteERP,
-      datosCenso: datosCenso
-    });
-
     if (!esActualizacion || !codClienteERP) {
-      console.log("ℹ️ Es un ALTA de cliente nuevo, no hay cambios que detectar");
       setCamposModificados(cambios);
       return;
     }
 
-    // 🔥 OBTENER DATOS REALES DEL ERP
     const clienteSistema = await fetchClienteERP(codClienteERP);
     
     if (!clienteSistema) {
-      console.log("⚠️ No se pudieron obtener datos del sistema ERP");
       setCamposModificados(cambios);
       return;
     }
 
     setClienteERP(clienteSistema);
 
-    // 🔥 FUNCIÓN AUXILIAR PARA NORMALIZAR VALORES
     const normalizarValor = (valor) => {
       if (valor === null || valor === undefined || valor === 'undefined') return '';
       return valor.toString().trim();
     };
 
-    // 🔥 CAMPOS A COMPARAR ENTRE CENSO Y SISTEMA
     const camposAComparar = [
       'razonsocial', 'ruc', 'direccion', 'telefono', 'celular', 
       'email', 'codlistaprecioerp', 'codvendedorerp', 'codsupervisorerp',
       'diavisita', 'frecuencia', 'latitud', 'longitud', 'canal'
     ];
 
-    console.log("🔄 Comparando campos entre Censo y Sistema ERP:");
-
     camposAComparar.forEach(campo => {
       const valorSistema = clienteSistema[campo] || '';
       const valorCenso = datosCenso[campo] || '';
       
-      // Normalizar valores para comparación
-      const sistemaNormalizado = normalizarValor(valorSistema);
-      const censoNormalizado = normalizarValor(valorCenso);
-      
-      // Caso especial para diavisita - manejar el valor 0 correctamente
       if (campo === 'diavisita') {
         const sistemaDia = valorSistema !== null && valorSistema !== undefined ? valorSistema.toString() : '';
         const censoDia = valorCenso !== null && valorCenso !== undefined ? valorCenso.toString() : '';
         
-        console.log(`📊 ${campo}:`, {
-          sistema: sistemaDia,
-          censo: censoDia,
-          sonDiferentes: sistemaDia !== censoDia
-        });
-        
         if (sistemaDia !== censoDia) {
           cambios.add(campo);
-          console.log(`🔄 CAMBIO DETECTADO en ${campo}: "${sistemaDia}" → "${censoDia}"`);
         }
       } else {
-        console.log(`📊 ${campo}:`, {
-          sistema: sistemaNormalizado,
-          censo: censoNormalizado,
-          sonDiferentes: sistemaNormalizado !== censoNormalizado
-        });
+        const sistemaNormalizado = normalizarValor(valorSistema);
+        const censoNormalizado = normalizarValor(valorCenso);
         
         if (sistemaNormalizado !== censoNormalizado) {
           cambios.add(campo);
-          console.log(`🔄 CAMBIO DETECTADO en ${campo}: "${sistemaNormalizado}" → "${censoNormalizado}"`);
         }
       }
     });
 
-    // 🔥 COMPARACIÓN ESPECIAL PARA ZONA
     const zonaSistema = clienteSistema.zonaerp || clienteSistema.codzonaerp;
     const zonaCenso = datosCenso.codzonaerp;
 
-    console.log("🔍 Comparando zonas:", {
-      sistema: zonaSistema,
-      censo: zonaCenso,
-      sonDiferentes: normalizarValor(zonaSistema) !== normalizarValor(zonaCenso)
-    });
-
     if (normalizarValor(zonaSistema) !== normalizarValor(zonaCenso)) {
       cambios.add('codzonaerp');
-      console.log(`🔄 CAMBIO DETECTADO en zona: "${zonaSistema}" → "${zonaCenso}"`);
     }
 
-    // 🔥 COMPARACIÓN ESPECIAL PARA SUBZONA
-    console.log("🔍 Buscando datos de subzona del sistema...");
-    
     let subzonaSistema = '';
     let subzonaCenso = datosCenso.codsubzonaerp || '';
 
-    // Estrategia 1: Buscar en zonaserp del cliente del sistema
     if (clienteSistema.zonaserp) {
       subzonaSistema = clienteSistema.zonaserp.codsubzonaerp || '';
-      console.log("📊 Subzona obtenida de zonaserp:", subzonaSistema);
-    } 
-    // Estrategia 2: Buscar en zonasData usando el zonaerp del sistema
-    else if (zonaSistema && zonasData.length > 0) {
+    } else if (zonaSistema && zonasData.length > 0) {
       const zonasDelSistema = zonasData.filter(zona => 
         normalizarValor(zona.codzonaerp) === normalizarValor(zonaSistema)
       );
       if (zonasDelSistema.length > 0) {
-        // Tomar la primera subzona como referencia
         subzonaSistema = zonasDelSistema[0].codsubzonaerp || '';
-        console.log("📊 Subzona obtenida de zonasData:", subzonaSistema);
       }
     }
 
-    console.log("🔍 Comparando subzonas:", {
-      sistema: subzonaSistema,
-      censo: subzonaCenso,
-      sonDiferentes: normalizarValor(subzonaSistema) !== normalizarValor(subzonaCenso)
-    });
-
     if (normalizarValor(subzonaSistema) !== normalizarValor(subzonaCenso)) {
       cambios.add('codsubzonaerp');
-      console.log(`🔄 CAMBIO DETECTADO en subzona: "${subzonaSistema}" → "${subzonaCenso}"`);
     }
 
-    console.log("🎯 Campos modificados encontrados:", Array.from(cambios));
     setCamposModificados(cambios);
   };
 
@@ -339,8 +314,6 @@ const ClientData = ({
   // Inicializar formData cuando cambien los datos del cliente
   useEffect(() => {
     if (clienteData) {
-      console.log("🔄 Inicializando formData con datos del censo:", clienteData);
-      
       const nuevosDatos = {
         estado: clienteData.estado || "TEMP",
         razonsocial: clienteData.razonsocial || "",
@@ -352,7 +325,6 @@ const ClientData = ({
         codlistaprecioerp: clienteData.codlistaprecioerp || "",
         codvendedorerp: clienteData.codvendedorerp || "",
         codsupervisorerp: clienteData.codsupervisorerp || "",
-        // 🔥 CORRECCIÓN: Usar función de normalización para diavisita
         diavisita: normalizarDiaVisita(clienteData.diavisita),
         frecuencia: clienteData.frecuencia || "",
         latitud: clienteData.latitud || "",
@@ -360,14 +332,11 @@ const ClientData = ({
         canal: clienteData.canal || "",
         subcanal: clienteData.subcanal || "",
         subcanal2: clienteData.subcanal2 || "",
-        // 🔥 CAMPOS DE ZONA Y SUBZONA
         codzonaerp: clienteData.zonaserp?.codzonaerp || clienteData.codzonaerp || "",
         codsubzonaerp: clienteData.zonaserp?.codsubzonaerp || clienteData.codsubzonaerp || "",
       };
       
-      console.log("📝 Diavisita inicializado:", nuevosDatos.diavisita);
       setFormData(nuevosDatos);
-      // Detectar cambios entre censo y sistema ERP
       detectarCambios(nuevosDatos);
     }
   }, [clienteData]);
@@ -375,7 +344,6 @@ const ClientData = ({
   // 🔥 ACTUALIZAR DETECCIÓN DE CAMBIOS CUANDO CAMBIA formData (en edición)
   useEffect(() => {
     if (isEditing && clienteERP) {
-      console.log("🔄 Modo edición - detectando cambios con datos del sistema");
       detectarCambios(formData);
     }
   }, [formData, isEditing]);
@@ -401,7 +369,6 @@ const ClientData = ({
           const data = await response.json();
           setCanalesData(data);
           
-          // Extraer grupos únicos
           const grupos = [...new Set(data.map(item => ({
             codcanalerp: item.codcanalerp,
             nombrecanal: item.nombrecanal
@@ -547,8 +514,6 @@ const ClientData = ({
         codempresa: 15,
         nroclienteerp: clienteData.nroclienteerp || 0,
         codsucursal: clienteData.sucursal?.codsucursal || null,
-        
-        // Datos del cliente editables
         ruc: datos.ruc,
         razonsocial: datos.razonsocial,
         direccion: datos.direccion,
@@ -557,27 +522,18 @@ const ClientData = ({
         celular: datos.celular,
         email: datos.email,
         estado: datos.estado,
-        
-        // Coordenadas editables
         latitud: datos.latitud ? parseFloat(datos.latitud) : null,
         longitud: datos.longitud ? parseFloat(datos.longitud) : null,
-        
-        // Campos comerciales editables
         codlistaprecioerp: datos.codlistaprecioerp,
         codvendedorerp: datos.codvendedorerp,
         codsupervisorerp: datos.codsupervisorerp,
-        // 🔥 CORRECCIÓN: Manejar diavisita correctamente (incluyendo 0)
         diavisita: datos.diavisita !== undefined && datos.diavisita !== "" ? parseInt(datos.diavisita) : null,
         frecuencia: datos.frecuencia ? parseInt(datos.frecuencia) : null,
-        
-        // Campos de canales
         canal: datos.canal || clienteData.canal,
         subcanal: datos.subcanal || clienteData.subcanal,
         subcanal2: datos.subcanal2 || clienteData.subcanal2,
         codcanalerp: datos.canal || clienteData.canaleserp?.codcanalerp,
-        
         codzonaerp: datos.codzonaerp || clienteData.zonaserp?.codzonaerp,
-        
         gpsactivo: clienteData.gpsactivo !== undefined ? clienteData.gpsactivo : true,
         precision: clienteData.precision || "GPS",
         tipored: clienteData.tipored || "3G",
@@ -591,7 +547,6 @@ const ClientData = ({
         codempresaerp: "PY02",
         codsucursalerp: clienteData.sucursal?.codsucursalerp || "S101",
         codclienteerp: clienteData.codclienteerp || "0",
-        codzonaerp: datos.codzonaerp || clienteData.zonaserp?.codzonaerp || null,
         clienteabc: clienteData.clienteabc || "",
         uid: clienteData.uid,
         codgrupoformaventaerp: clienteData.codgrupoformaventaerp || "CD",
@@ -601,17 +556,13 @@ const ClientData = ({
         retornosap: clienteData.retornosap,
         nombrevendedor: clienteData.nombrevendedor,
         nombresupervisor: clienteData.nombresupervisor,
-        
         sucursal: clienteData.sucursal,
         cliente: clienteData.cliente,
         codusuario: clienteData.codusuario,
         usuario: clienteData.usuario,
-        
         zonaserp: zonaSeleccionada || clienteData.zonaserp,
         canaleserp: canalSeleccionado || clienteData.canaleserp
       };
-
-      console.log("Enviando datos a API - diavisita:", payload.diavisita, "Tipo:", typeof payload.diavisita);
 
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/censo`,
@@ -633,7 +584,7 @@ const ClientData = ({
           confirmButtonText: 'Aceptar',
           confirmButtonColor: '#3b82f6',
           background: "#1f2937",
-      color: "#fff",
+          color: "#fff",
           timer: 3000,
           timerProgressBar: true
         });
@@ -650,7 +601,7 @@ const ClientData = ({
           text: `Error ${response.status}: ${errorText || 'Error del servidor'}`,
           icon: 'error',
           background: "#1f2937",
-      color: "#fff",
+          color: "#fff",
           confirmButtonText: 'Entendido',
           confirmButtonColor: '#ef4444'
         });
@@ -666,7 +617,7 @@ const ClientData = ({
         text: error.message,
         icon: 'error',
         background: "#1f2937",
-      color: "#fff",
+        color: "#fff",
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#ef4444'
       });
@@ -718,7 +669,6 @@ const ClientData = ({
         codlistaprecioerp: clienteData.codlistaprecioerp || "",
         codvendedorerp: clienteData.codvendedorerp || "",
         codsupervisorerp: clienteData.codsupervisorerp || "",
-        // 🔥 CORRECCIÓN: Usar función de normalización
         diavisita: normalizarDiaVisita(clienteData.diavisita),
         frecuencia: clienteData.frecuencia || "",
         latitud: clienteData.latitud || "",
@@ -738,8 +688,6 @@ const ClientData = ({
   const handleSave = async () => {
     setLoading(true);
     try {
-      console.log("💾 Guardando datos - diavisita original:", formData.diavisita);
-      
       const datosFormateados = {
         ...formData,
         razonsocial: formData.razonsocial ? formData.razonsocial.toUpperCase().trim() : "",
@@ -751,7 +699,6 @@ const ClientData = ({
         estado: formData.estado || "TEMP",
         latitud: formData.latitud ? formData.latitud.toString() : "",
         longitud: formData.longitud ? formData.longitud.toString() : "",
-        // 🔥 CORRECCIÓN: Mantener diavisita como string usando normalización
         diavisita: normalizarDiaVisita(formData.diavisita),
         frecuencia: formData.frecuencia ? formData.frecuencia.toString() : "",
         canal: formData.canal || clienteData.canal,
@@ -760,8 +707,6 @@ const ClientData = ({
         codzonaerp: formData.codzonaerp || clienteData.zonaserp?.codzonaerp,
         codsubzonaerp: formData.codsubzonaerp || clienteData.zonaserp?.codsubzonaerp,
       };
-      
-      console.log("📤 Datos formateados para guardar - diavisita:", datosFormateados.diavisita);
       
       const resultado = await guardarDatosEnAPI(datosFormateados);
       
@@ -912,7 +857,6 @@ const ClientData = ({
       }
 
       if (fieldName === "diavisita") {
-        console.log("🎯 Renderizando día de visita en edición:", formData.diavisita);
         return (
           <div className={`validator-data-row editable ${claseCambio}`}>
             <span className="validator-label">{label}</span>
@@ -931,6 +875,35 @@ const ClientData = ({
                 placeholder="Seleccionar día..."
               />
               {mostrarValorAnterior(fieldName)}
+            </div>
+          </div>
+        );
+      }
+
+      if (fieldName === "ruc") {
+        return (
+          <div className={`validator-data-row editable ${claseCambio}`}>
+            <span className="validator-label">{label}</span>
+            <div className="validator-edit-field-container">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                <input
+                  type="text"
+                  name="ruc"
+                  value={formData.ruc || ""}
+                  onChange={handleInputChange}
+                  className="validator-edit-input"
+                  style={{ flex: 1 }}
+                />
+                <button 
+                  onClick={() => handleOpenRucModal(formData.ruc)}
+                  className="validator-ruc-eye-button"
+                  title="Verificar RUC"
+                  disabled={!formData.ruc}
+                >
+                  <FaEye size={16} />
+                </button>
+              </div>
+              {mostrarValorAnterior("ruc")}
             </div>
           </div>
         );
@@ -965,6 +938,8 @@ const ClientData = ({
         onCopy={() => copiarTexto(getValorParaCopiar(fieldName, clienteData))}
         showOriginal={clienteERP && getFieldValue(fieldName, { ...clienteERP, zonaserp: clienteData.zonaserp }) !== getFieldValue(fieldName, clienteData)}
         tieneCambios={camposModificados.has(fieldName)}
+        showEyeButton={fieldName === "ruc"}
+        onEyeClick={() => handleOpenRucModal(clienteData.ruc)}
       />
     );
   };
@@ -1052,7 +1027,10 @@ const ClientData = ({
         {renderField("Celular:", "celular", "text")}
         {renderField("Razón Social:", "razonsocial", "text")}
         {renderField("Teléfono:", "telefono", "text")}
+        
+        {/* 🔥 CAMPO RUC CON BOTÓN DE VERIFICACIÓN */}
         {renderField("RUC:", "ruc", "text")}
+        
         {renderField("Dirección:", "direccion", "text")}
 
         {/* Sucursal (solo lectura) */}
@@ -1318,26 +1296,68 @@ const ClientData = ({
           tieneCambios={false}
         />
       </div>
+
+      {/* 🔥 MODAL DE VERIFICACIÓN DE RUC (COMPONENTE SEPARADO) */}
+      <ModalRUC
+        rucValue={selectedRuc}
+        isOpen={showRucModal}
+        onClose={handleCloseRucModal}
+        onUseData={handleUsarDatosRuc}
+        isEditing={isEditing}
+      />
     </div>
   );
 };
 
-// 🔥 COMPONENTE DataRow ACTUALIZADO
-const DataRow = ({ label, value, originalValue, onCopy, showOriginal, tieneCambios }) => (
+// 🔥 COMPONENTE DataRow ACTUALIZADO CON BOTÓN DE OJO
+const DataRow = ({ 
+  label, 
+  value, 
+  originalValue, 
+  onCopy, 
+  showOriginal, 
+  tieneCambios, 
+  showEyeButton = false,
+  onEyeClick 
+}) => (
   <div className={`validator-data-row ${tieneCambios ? 'validator-campo-modificado' : ''}`}>
     <span className="validator-label">{label}</span>
-    <span
-      className="validator-value"
-      style={{ cursor: onCopy ? "pointer" : "default" }}
-      onClick={onCopy}
-    >
-      {value}
-      {showOriginal && originalValue && (
-        <span className="validator-original-value">
-          (sistema: <span className="validator-original-text">{originalValue}</span>)
-        </span>
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '8px', 
+      justifyContent: 'flex-end',
+      width: '100%'
+    }}>
+      <span
+        className="validator-value"
+        style={{ 
+          cursor: onCopy ? "pointer" : "default",
+          flex: 1,
+          textAlign: 'right'
+        }}
+        onClick={onCopy}
+      >
+        {value}
+        {showOriginal && originalValue && (
+          <span className="validator-original-value">
+            (sistema: <span className="validator-original-text">{originalValue}</span>)
+          </span>
+        )}
+      </span>
+      {showEyeButton && onEyeClick && (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            onEyeClick();
+          }}
+          className="validator-ruc-eye-button"
+          title="Verificar RUC"
+        >
+          <FaEye size={14} />
+        </button>
       )}
-    </span>
+    </div>
   </div>
 ); 
 
