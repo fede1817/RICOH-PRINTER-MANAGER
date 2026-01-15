@@ -14,7 +14,8 @@ const ModalRUC = ({
   const [error, setError] = useState('');
   const [rawApiResponse, setRawApiResponse] = useState(null);
   const [proxyUsed, setProxyUsed] = useState('');
-  const [rucMismatch, setRucMismatch] = useState(false); // 🔥 NUEVO: Estado para validación
+  const [rucMismatch, setRucMismatch] = useState(false);
+  const [notification, setNotification] = useState(''); // 🔥 Para notificaciones
   
   // 🔥 REFERENCIAS PARA EL DRAGGING
   const modalRef = useRef(null);
@@ -30,11 +31,10 @@ const ModalRUC = ({
   // 🔗 URL BASE DE LA NUEVA API
   const API_BASE_URL = 'https://fast.turuc.com.py/api/contribuyente/table';
 
-  // 🔥 FUNCIÓN PARA COMPARAR RUCs
+  // 🔥 FUNCIÓN PARA COMPARAR RUCs (se mantiene igual)
   const compareRucs = useCallback((apiRuc, inputRuc) => {
     if (!apiRuc || !inputRuc) return false;
     
-    // Normalizar ambos RUCs (eliminar espacios, guiones, etc.)
     const normalizeRuc = (ruc) => {
       if (!ruc) return '';
       return ruc.toString().trim().toUpperCase().replace(/-/g, '');
@@ -48,7 +48,85 @@ const ModalRUC = ({
     return normalizedApiRuc === normalizedInputRuc;
   }, []);
 
-  // 🔥 FUNCIÓN OPTIMIZADA PARA LA NUEVA API
+  // 🔥 NOTIFICACIÓN TEMPORAL
+  const showTemporaryNotification = useCallback((message) => {
+    setNotification(message);
+    setTimeout(() => setNotification(''), 2000);
+  }, []);
+
+  // 🔥 MÉTODO FALLBACK PARA COPIAR
+  const fallbackCopyToClipboard = useCallback((text) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+      textArea.style.color = 'transparent';
+      
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      return successful;
+    } catch (err) {
+      console.error('Error en fallback copy:', err);
+      return false;
+    }
+  }, []);
+
+  // 🔥 COPIAR AL PORTAPAPELES CON FALLBACK
+  const copyToClipboard = useCallback((text) => {
+    if (!text) {
+      showTemporaryNotification('❌ No hay texto para copiar');
+      return;
+    }
+    
+    // Limpiar el texto de espacios innecesarios
+    const textToCopy = text.toString().trim();
+    
+    // Verificar si estamos en un contexto seguro (HTTPS) y si clipboard está disponible
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+          console.log('Copiado al portapapeles:', textToCopy);
+          showTemporaryNotification('✓ Copiado al portapapeles');
+        })
+        .catch(err => {
+          console.warn('Clipboard API falló, usando fallback:', err);
+          // Intentar con fallback
+          const fallbackSuccess = fallbackCopyToClipboard(textToCopy);
+          if (fallbackSuccess) {
+            showTemporaryNotification('✓ Copiado al portapapeles');
+          } else {
+            showTemporaryNotification('❌ No se pudo copiar');
+          }
+        });
+    } else {
+      // Usar fallback directamente
+      const success = fallbackCopyToClipboard(textToCopy);
+      if (success) {
+        showTemporaryNotification('✓ Copiado al portapapeles');
+      } else {
+        // Último recurso: mostrar el texto para copiar manualmente
+        showTemporaryNotification(`📋 Texto: ${textToCopy.substring(0, 30)}...`);
+        console.log('Texto para copiar manualmente:', textToCopy);
+      }
+    }
+  }, [fallbackCopyToClipboard, showTemporaryNotification]);
+
+  // 🔥 FUNCIÓN OPTIMIZADA PARA LA NUEVA API (se mantiene igual)
   const fetchRucData = useCallback(async (ruc) => {
     if (!ruc || ruc.trim() === '') {
       setError('No hay RUC para consultar');
@@ -60,12 +138,11 @@ const ModalRUC = ({
     setRucData(null);
     setRawApiResponse(null);
     setProxyUsed('');
-    setRucMismatch(false); // 🔥 Reiniciar estado de validación
+    setRucMismatch(false);
     
     const rucFormateado = ruc.trim();
     
     try {
-      // 🔧 Construir los parámetros específicos para esta API
       const params = new URLSearchParams({
         draw: '1',
         'columns[0][data]': 'ruc',
@@ -88,8 +165,8 @@ const ModalRUC = ({
         'columns[2][search][regex]': 'false',
         start: '0',
         length: '10',
-        search: rucFormateado, // ← Aquí va el RUC que buscamos
-        _: Date.now().toString() // Timestamp para evitar caché
+        search: rucFormateado,
+        _: Date.now().toString()
       });
 
       const apiUrl = `${API_BASE_URL}?${params.toString()}`;
@@ -127,18 +204,15 @@ const ModalRUC = ({
         
         console.log("📊 Respuesta de la API:", data);
         
-        // 🔍 Analizar la estructura de respuesta
         if (data.data && Array.isArray(data.data) && data.data.length > 0) {
           const result = data.data[0];
           
-          // 🎯 Extraer solo los datos necesarios
           const formattedData = {
-            ruc: result.ruc || `${result.doc}-${result.dv}`, // Usar ruc o construir desde doc y dv
+            ruc: result.ruc || `${result.doc}-${result.dv}`,
             razon_social: result.razonSocial || '',
             estado: result.estado || ''
           };
           
-          // 🔥 VALIDACIÓN EXTRA: Comparar RUCs
           const rucsCoinciden = compareRucs(formattedData.ruc, rucFormateado);
           
           if (!rucsCoinciden) {
@@ -174,7 +248,7 @@ const ModalRUC = ({
     }
   }, [compareRucs]);
 
-  // 🔥 EFECTO PARA CARGAR DATOS
+  // 🔥 EFECTO PARA CARGAR DATOS (se mantiene igual)
   useEffect(() => {
     let isMounted = true;
     let timeoutId;
@@ -196,7 +270,7 @@ const ModalRUC = ({
     };
   }, [isOpen, rucValue, fetchRucData]);
 
-  // 🔥 FUNCIONES PARA DRAGGING
+  // 🔥 FUNCIONES PARA DRAGGING (se mantienen igual)
   const handleDragStart = useCallback((e) => {
     const isHeader = e.target.closest('.modal-ruc-header');
     const isDragHandle = e.target.closest('.modal-ruc-drag-handle');
@@ -252,7 +326,7 @@ const ModalRUC = ({
     document.body.style.userSelect = '';
   }, []);
 
-  // 🔥 EFECTO PARA MANEJAR DRAGGING
+  // 🔥 EFECTO PARA MANEJAR DRAGGING (se mantiene igual)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -279,7 +353,7 @@ const ModalRUC = ({
     };
   }, [isOpen, handleDragMove, handleDragEnd]);
 
-  // 🔥 CENTRAR MODAL AL ABRIR
+  // 🔥 CENTRAR MODAL AL ABRIR (se mantiene igual)
   const centerModal = useCallback(() => {
     if (!modalRef.current || !backdropRef.current || initialPosSet.current) return;
     
@@ -296,7 +370,7 @@ const ModalRUC = ({
     initialPosSet.current = true;
   }, []);
 
-  // 🔥 EFECTO PARA POSICIONAR Y REINICIAR AL ABRIR
+  // 🔥 EFECTO PARA POSICIONAR Y REINICIAR AL ABRIR (se mantiene igual)
   useEffect(() => {
     if (isOpen) {
       initialPosSet.current = false;
@@ -306,7 +380,7 @@ const ModalRUC = ({
     }
   }, [isOpen, centerModal]);
 
-  // 🔥 EFECTO PARA CERRAR CON ESC
+  // 🔥 EFECTO PARA CERRAR CON ESC (se mantiene igual)
   useEffect(() => {
     const handleEscKey = (event) => {
       if (event.key === 'Escape' && isOpen) {
@@ -323,20 +397,12 @@ const ModalRUC = ({
     };
   }, [isOpen, onClose]);
 
-  // 🔥 CERRAR AL HACER CLICK FUERA
+  // 🔥 CERRAR AL HACER CLICK FUERA (se mantiene igual)
   const handleBackdropClick = useCallback((e) => {
     if (e.target === backdropRef.current && !isDragging.current) {
       onClose();
     }
   }, [onClose, isDragging]);
-
-  // 🔥 COPIAR AL PORTAPAPELES
-  const copyToClipboard = useCallback((text) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
-      console.log('Copiado:', text);
-    });
-  }, []);
 
   // 🔥 RENDERIZADO
   const renderContent = () => {
@@ -507,61 +573,70 @@ const ModalRUC = ({
   if (!isOpen) return null;
 
   return (
-    <div 
-      ref={backdropRef}
-      className="modal-ruc-backdrop-clear" 
-      onClick={handleBackdropClick}
-      onMouseDown={(e) => {
-        if (e.target.closest('.modal-ruc-header') || e.target.closest('.modal-ruc-drag-handle')) {
-          handleDragStart(e);
-        }
-      }}
-      onTouchStart={(e) => {
-        if (e.target.closest('.modal-ruc-header') || e.target.closest('.modal-ruc-drag-handle')) {
-          if (e.touches.length === 1) {
-            handleDragStart(e.touches[0]);
-          }
-        }
-      }}
-    >
+    <>
       <div 
-        ref={modalRef}
-        className="modal-ruc-container draggable"
-        style={{
-          left: modalPosition.current.x + 'px',
-          top: modalPosition.current.y + 'px'
+        ref={backdropRef}
+        className="modal-ruc-backdrop-clear" 
+        onClick={handleBackdropClick}
+        onMouseDown={(e) => {
+          if (e.target.closest('.modal-ruc-header') || e.target.closest('.modal-ruc-drag-handle')) {
+            handleDragStart(e);
+          }
+        }}
+        onTouchStart={(e) => {
+          if (e.target.closest('.modal-ruc-header') || e.target.closest('.modal-ruc-drag-handle')) {
+            if (e.touches.length === 1) {
+              handleDragStart(e.touches[0]);
+            }
+          }
         }}
       >
-        <div className="modal-ruc-header">
-          <div className="modal-ruc-title">
-            <div className="modal-ruc-drag-handle">
-              <FaArrowsAlt className="modal-ruc-drag-icon" />
+        <div 
+          ref={modalRef}
+          className="modal-ruc-container draggable"
+          style={{
+            left: modalPosition.current.x + 'px',
+            top: modalPosition.current.y + 'px'
+          }}
+        >
+          <div className="modal-ruc-header">
+            <div className="modal-ruc-title">
+              <div className="modal-ruc-drag-handle">
+                <FaArrowsAlt className="modal-ruc-drag-icon" />
+              </div>
+              <div>
+                <h3>
+                  <FaEye className="modal-ruc-title-icon" />
+                  Verificación de RUC - Nueva API
+                </h3>
+                <p className="modal-ruc-subtitle">
+                  RUC consultado: <strong>{rucValue || 'No disponible'}</strong>
+                  {rucMismatch && <span className="warning-badge">⚠️ Discrepancia</span>}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3>
-                <FaEye className="modal-ruc-title-icon" />
-                Verificación de RUC - Nueva API
-              </h3>
-              <p className="modal-ruc-subtitle">
-                RUC consultado: <strong>{rucValue || 'No disponible'}</strong>
-                {rucMismatch && <span className="warning-badge">⚠️ Discrepancia</span>}
-              </p>
-            </div>
+            <button 
+              className="modal-ruc-close-btn"
+              onClick={onClose}
+              aria-label="Cerrar modal"
+            >
+              <FaTimes />
+            </button>
           </div>
-          <button 
-            className="modal-ruc-close-btn"
-            onClick={onClose}
-            aria-label="Cerrar modal"
-          >
-            <FaTimes />
-          </button>
-        </div>
-        
-        <div className="modal-ruc-content">
-          {renderContent()}
+          
+          <div className="modal-ruc-content">
+            {renderContent()}
+          </div>
         </div>
       </div>
-    </div>
+      
+      {/* 🔥 NOTIFICACIÓN TEMPORAL */}
+      {notification && (
+        <div className="modal-ruc-notification">
+          {notification}
+        </div>
+      )}
+    </>
   );
 };
 

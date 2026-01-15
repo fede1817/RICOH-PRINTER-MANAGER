@@ -811,3 +811,50 @@
   max-height: 200px;
   overflow-y: auto;
 }
+
+/* 🔥 NOTIFICACIÓN TEMPORAL */
+.modal-ruc-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 10000;
+  animation: notification-slide-in 0.3s ease-out, notification-fade-out 0.3s ease-out 1.7s;
+  animation-fill-mode: forwards;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid #059669;
+  max-width: 300px;
+}
+
+@keyframes notification-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes notification-fade-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+/* Para notificaciones de error */
+.modal-ruc-notification:contains("❌") {
+  background: rgba(239, 68, 68, 0.9);
+  border-left-color: #dc2626;
+}
