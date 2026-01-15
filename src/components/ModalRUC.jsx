@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FaTimes, FaEye, FaCopy, FaExclamationTriangle, FaCheckCircle, FaArrowsAlt } from 'react-icons/fa';
+import { FaTimes, FaEye, FaCopy, FaExclamationTriangle, FaCheckCircle, FaArrowsAlt, FaExclamationCircle } from 'react-icons/fa';
 import './ModalRUC.css';
 
 const ModalRUC = ({ 
@@ -14,6 +14,7 @@ const ModalRUC = ({
   const [error, setError] = useState('');
   const [rawApiResponse, setRawApiResponse] = useState(null);
   const [proxyUsed, setProxyUsed] = useState('');
+  const [rucMismatch, setRucMismatch] = useState(false); // 🔥 NUEVO: Estado para validación
   
   // 🔥 REFERENCIAS PARA EL DRAGGING
   const modalRef = useRef(null);
@@ -29,6 +30,24 @@ const ModalRUC = ({
   // 🔗 URL BASE DE LA NUEVA API
   const API_BASE_URL = 'https://fast.turuc.com.py/api/contribuyente/table';
 
+  // 🔥 FUNCIÓN PARA COMPARAR RUCs
+  const compareRucs = useCallback((apiRuc, inputRuc) => {
+    if (!apiRuc || !inputRuc) return false;
+    
+    // Normalizar ambos RUCs (eliminar espacios, guiones, etc.)
+    const normalizeRuc = (ruc) => {
+      if (!ruc) return '';
+      return ruc.toString().trim().toUpperCase().replace(/-/g, '');
+    };
+    
+    const normalizedApiRuc = normalizeRuc(apiRuc);
+    const normalizedInputRuc = normalizeRuc(inputRuc);
+    
+    console.log(`🔍 Comparando RUCs: API="${normalizedApiRuc}" vs INPUT="${normalizedInputRuc}"`);
+    
+    return normalizedApiRuc === normalizedInputRuc;
+  }, []);
+
   // 🔥 FUNCIÓN OPTIMIZADA PARA LA NUEVA API
   const fetchRucData = useCallback(async (ruc) => {
     if (!ruc || ruc.trim() === '') {
@@ -41,6 +60,7 @@ const ModalRUC = ({
     setRucData(null);
     setRawApiResponse(null);
     setProxyUsed('');
+    setRucMismatch(false); // 🔥 Reiniciar estado de validación
     
     const rucFormateado = ruc.trim();
     
@@ -118,6 +138,14 @@ const ModalRUC = ({
             estado: result.estado || ''
           };
           
+          // 🔥 VALIDACIÓN EXTRA: Comparar RUCs
+          const rucsCoinciden = compareRucs(formattedData.ruc, rucFormateado);
+          
+          if (!rucsCoinciden) {
+            setRucMismatch(true);
+            console.warn(`⚠️ ADVERTENCIA: RUC no coincide. API: "${formattedData.ruc}" vs Input: "${rucFormateado}"`);
+          }
+          
           setRucData(formattedData);
           console.log("✅ Datos formateados:", formattedData);
           
@@ -144,7 +172,7 @@ const ModalRUC = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [compareRucs]);
 
   // 🔥 EFECTO PARA CARGAR DATOS
   useEffect(() => {
@@ -353,6 +381,28 @@ const ModalRUC = ({
     if (rucData) {
       return (
         <div className="modal-ruc-data">
+          {/* 🔥 BANNER DE ADVERTENCIA SI NO COINCIDEN LOS RUCs */}
+          {rucMismatch && (
+            <div className="modal-ruc-warning-extended">
+              <div className="modal-ruc-warning-header">
+                <FaExclamationCircle />
+                <span>⚠️ ADVERTENCIA: Posible discrepancia en RUC</span>
+              </div>
+              <div className="modal-ruc-warning-content">
+                <p>
+                  El RUC recuperado de la API no coincide completamente con el consultado.
+                </p>
+                <div className="modal-ruc-warning-details">
+                  <div><strong>API devuelve:</strong> {rucData.ruc}</div>
+                  <div><strong>Usted consultó:</strong> {rucValue}</div>
+                </div>
+                <p className="modal-ruc-warning-note">
+                  <strong>Recomendación:</strong> Verifique manualmente los datos antes de usarlos.
+                </p>
+              </div>
+            </div>
+          )}
+          
           <div className="modal-ruc-success-banner">
             <FaCheckCircle />
             <span>Datos encontrados correctamente</span>
@@ -367,7 +417,9 @@ const ModalRUC = ({
             <div className="modal-ruc-data-item">
               <label>RUC</label>
               <div className="modal-ruc-data-value-container">
-                <span className="modal-ruc-data-value highlight">{rucData.ruc || 'No disponible'}</span>
+                <span className={`modal-ruc-data-value highlight ${rucMismatch ? 'ruc-mismatch-value' : ''}`}>
+                  {rucData.ruc || 'No disponible'}
+                </span>
                 <button 
                   onClick={() => copyToClipboard(rucData.ruc)}
                   className="modal-ruc-copy-btn"
@@ -376,6 +428,11 @@ const ModalRUC = ({
                   <FaCopy />
                 </button>
               </div>
+              {rucMismatch && (
+                <div className="modal-ruc-validation-note">
+                  <small>Consulta original: <strong>{rucValue}</strong></small>
+                </div>
+              )}
             </div>
             
             <div className="modal-ruc-data-item">
@@ -418,13 +475,15 @@ const ModalRUC = ({
                   }
                   onClose();
                 }}
-                className="modal-ruc-use-btn"
+                className={`modal-ruc-use-btn ${rucMismatch ? 'with-warning' : ''}`}
               >
                 <FaCopy style={{ marginRight: '8px' }} />
-                Usar estos datos en el formulario
+                {rucMismatch ? '⚠️ Usar datos (con advertencia)' : 'Usar estos datos en el formulario'}
               </button>
               <p className="modal-ruc-actions-note">
-                Se copiarán: Razón Social y RUC
+                {rucMismatch 
+                  ? '⚠️ Atención: El RUC no coincide con la consulta original'
+                  : 'Se copiarán: Razón Social y RUC'}
               </p>
             </div>
           )}
@@ -468,6 +527,10 @@ const ModalRUC = ({
       <div 
         ref={modalRef}
         className="modal-ruc-container draggable"
+        style={{
+          left: modalPosition.current.x + 'px',
+          top: modalPosition.current.y + 'px'
+        }}
       >
         <div className="modal-ruc-header">
           <div className="modal-ruc-title">
@@ -479,7 +542,10 @@ const ModalRUC = ({
                 <FaEye className="modal-ruc-title-icon" />
                 Verificación de RUC - Nueva API
               </h3>
-              <p className="modal-ruc-subtitle">RUC consultado: <strong>{rucValue || 'No disponible'}</strong></p>
+              <p className="modal-ruc-subtitle">
+                RUC consultado: <strong>{rucValue || 'No disponible'}</strong>
+                {rucMismatch && <span className="warning-badge">⚠️ Discrepancia</span>}
+              </p>
             </div>
           </div>
           <button 

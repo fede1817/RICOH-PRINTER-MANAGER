@@ -18,6 +18,8 @@
   --modal-success: #10b981;
   --modal-warning: #f59e0b;
   --modal-error: #ef4444;
+  --modal-error-light: #fee2e2;
+  --modal-error-dark: #b91c1c;
   --modal-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   --modal-radius: 10px;
   --modal-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -262,6 +264,101 @@
   font-size: 1.1rem;
 }
 
+/* 🔥 NUEVO: Banner de advertencia en ROJO */
+.modal-ruc-warning-banner {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border: 1px solid var(--modal-error);
+  border-left: 4px solid var(--modal-error);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--modal-error);
+  font-weight: 600;
+  animation: modal-slide-in 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-ruc-warning-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--modal-error), #f87171, var(--modal-error));
+  animation: warning-shimmer 2s infinite;
+}
+
+.modal-ruc-warning-banner svg {
+  font-size: 1.1rem;
+  animation: warning-pulse 2s infinite;
+}
+
+/* 🔥 Mensaje de advertencia extendido */
+.modal-ruc-warning-extended {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.03) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-left: 4px solid var(--modal-error);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  animation: modal-slide-in 0.4s ease-out, warning-shake 0.5s ease-in-out 0.4s;
+}
+
+.modal-ruc-warning-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  color: var(--modal-error);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.modal-ruc-warning-header svg {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  animation: warning-pulse 2s infinite;
+}
+
+.modal-ruc-warning-content {
+  color: #fca5a5;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.modal-ruc-warning-details {
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin: 0.5rem 0;
+  border-left: 3px solid #f87171;
+}
+
+.modal-ruc-warning-details strong {
+  color: #fecaca;
+  font-weight: 600;
+}
+
+.modal-ruc-warning-details div {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+}
+
+.modal-ruc-warning-note {
+  color: #fca5a5;
+  font-size: 0.75rem;
+  font-style: italic;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed rgba(239, 68, 68, 0.3);
+}
+
 /* Grid de datos */
 .modal-ruc-data-grid {
   display: flex;
@@ -313,6 +410,34 @@
   font-size: 1rem;
 }
 
+/* 🔥 Estilos para valores que no coinciden */
+.ruc-mismatch-value {
+  color: var(--modal-error) !important;
+  font-weight: 700;
+  position: relative;
+  padding-right: 20px;
+}
+
+.ruc-mismatch-value::after {
+  content: '⚠️';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8em;
+}
+
+.modal-ruc-validation-note {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #f87171;
+  text-align: center;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
 /* Botón copiar */
 .modal-ruc-copy-btn {
   background: rgba(59, 130, 246, 0.1);
@@ -356,11 +481,41 @@
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
+  position: relative;
 }
 
 .modal-ruc-use-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+}
+
+/* 🔥 Botón con advertencia */
+.modal-ruc-use-btn.with-warning {
+  background: linear-gradient(135deg, var(--modal-error) 0%, #dc2626 100%);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  position: relative;
+  overflow: hidden;
+  animation: warning-button-pulse 2s infinite;
+  padding-left: 3rem;
+}
+
+.modal-ruc-use-btn.with-warning::before {
+  content: '⚠️';
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+}
+
+.modal-ruc-use-btn.with-warning:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+.modal-ruc-use-btn.with-warning:active {
+  transform: translateY(0);
 }
 
 .modal-ruc-actions-note {
@@ -394,6 +549,19 @@
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
+/* 🔥 Para el subtítulo cuando hay discrepancia */
+.modal-ruc-subtitle .warning-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  animation: warning-badge-blink 1.5s infinite;
+}
+
 /* Información del proxy */
 .modal-ruc-proxy-info {
   font-size: 0.75rem;
@@ -410,7 +578,48 @@
   gap: 0.5rem;
 }
 
-/* Animaciones */
+/* 🔥 Animaciones específicas para advertencias */
+@keyframes warning-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes warning-shimmer {
+  0% {
+    background-position: -100px 0;
+  }
+  100% {
+    background-position: 100px 0;
+  }
+}
+
+@keyframes warning-button-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
+  }
+}
+
+@keyframes warning-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+@keyframes warning-badge-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.6; }
+}
+
+/* Animaciones generales */
 @keyframes modal-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -480,6 +689,18 @@
   .modal-ruc-drag-icon {
     font-size: 0.8rem;
   }
+  
+  .modal-ruc-warning-extended {
+    padding: 0.75rem;
+  }
+  
+  .modal-ruc-warning-header {
+    font-size: 0.9rem;
+  }
+  
+  .modal-ruc-warning-content {
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -504,10 +725,26 @@
     padding: 0.75rem;
     font-size: 0.85rem;
   }
+  
+  .modal-ruc-use-btn.with-warning {
+    padding-left: 2.5rem;
+    font-size: 0.85rem;
+  }
+  
+  .modal-ruc-use-btn.with-warning::before {
+    left: 10px;
+    font-size: 1rem;
+  }
+  
+  .modal-ruc-warning-banner,
+  .modal-ruc-success-banner {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
 }
 
 /* Estilos para el borde de dragging activo */
-.modal-ruc-container.draggable.dragging {
+.modal-ruc-container.draggable.dragging-active {
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
   border-color: var(--modal-primary);
 }
@@ -521,4 +758,56 @@
 /* Asegurar que el contenido sea seleccionable */
 .modal-ruc-content * {
   user-select: text;
+}
+
+/* Estado para los valores de estado */
+.estado-activo {
+  color: var(--modal-success);
+  font-weight: 600;
+}
+
+.estado-inactivo {
+  color: var(--modal-error);
+  font-weight: 600;
+}
+
+/* Estilos para datos crudos de API */
+.modal-ruc-raw-data {
+  margin-top: 1rem;
+  border-top: 1px solid var(--modal-border);
+  padding-top: 1rem;
+}
+
+.modal-ruc-raw-data details {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.modal-ruc-raw-data summary {
+  color: var(--modal-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: var(--modal-transition);
+}
+
+.modal-ruc-raw-data summary:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--modal-primary);
+}
+
+.modal-ruc-raw-data pre {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--modal-border);
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  overflow-x: auto;
+  max-height: 200px;
+  overflow-y: auto;
 }

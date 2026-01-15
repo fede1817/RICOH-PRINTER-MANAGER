@@ -132,6 +132,11 @@ const modelosYToners = {
     toner: "HP 667",
     tipo: "Color"
   },
+  "HP Deskjet Ink Advantage 2874": {
+    modelos: ["HP Deskjet Ink Advantage 2874"],
+    toner: "HP 667",
+    tipo: "Color"
+  },
 
   // 🔥 NUEVO — modelo que pediste
   "HP LaserJet Pro M127FN": {
@@ -215,7 +220,8 @@ const modelosYToners = {
       "HP LaserJet M111w"
     ],
     "CAAG": [
-      "HP LaserJet Pro M203"
+      "HP LaserJet Pro M203",
+      "HP LaserJet M111a"
     ],
     "PJC": [
       "HP LaserJet P1102w",
@@ -226,7 +232,8 @@ const modelosYToners = {
     "SANT": [
       "HP LaserJet Pro M107w",
       "HP LaserJet Pro MFP M135w",
-      "HP Deskjet Ink Advantage 2375"
+      "HP Deskjet Ink Advantage 2375",
+      "HP Deskjet Ink Advantage 2874"
     ],
     "MIS": [
       "HP LaserJet Pro M203dw",
