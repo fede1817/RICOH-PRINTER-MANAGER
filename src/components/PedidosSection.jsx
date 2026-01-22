@@ -114,7 +114,7 @@ const modelosYToners = {
   },
   "HP LaserJet Pro M203": {
     modelos: ["HP LaserJet Pro M203"],
-    toner: "HP 30A",
+    toner: "HP 30A (CF230A)",
     tipo: "Blanco y negro"
   },
   "HP LaserJet Pl 102w": {
@@ -141,7 +141,7 @@ const modelosYToners = {
   // 🔥 NUEVO — modelo que pediste
   "HP LaserJet Pro M127FN": {
     modelos: ["HP LaserJet Pro M127FN"],
-    toner: "HP 83A",
+    toner: "HP 83A(CF283A)",
     tipo: "Blanco y negro"
   },
 
@@ -152,7 +152,7 @@ const modelosYToners = {
   },
   "HP LaserJet Pro M203dw": {
     modelos: ["HP LaserJet Pro M203dw"],
-    toner: "HP 30A",
+    toner: "HP 30A (CF230A)",
     tipo: "Blanco y negro"
   },
   "HP DeskJet 2775": {
