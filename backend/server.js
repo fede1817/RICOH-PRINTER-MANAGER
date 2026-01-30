@@ -714,6 +714,287 @@ setInterval(
   5 * 60 * 1000,
 ); // cada 5 minutos
 
+// En tu archivo de rutas (routes.js o similar)
+app.post("/api/solicitar-carga", async (req, res) => {
+  try {
+    // Usa el mismo transporter que ya tienes configurado
+    const htmlBody = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Carga de Pedidos</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+        }
+        .email-container {
+            max-width: 650px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e1e5eb;
+        }
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: black;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            color: #4f46e5;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            border-left: 4px solid #4f46e5;
+            padding-left: 12px;
+        }
+        .message-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        .url-box {
+            background-color: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+        }
+        .url {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: #0c4a6e;
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            display: block;
+            margin: 15px 0;
+            text-decoration: none;
+            word-break: break-all;
+            border: 1px solid #cbd5e1;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 10px 0;
+            border: none;
+            cursor: pointer;
+        }
+        .warning-box {
+            background-color: #fffbeb;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .thank-you {
+            background-color: #f0fdf4;
+            border: 2px solid #22c55e;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .signature {
+            text-align: center;
+            color: #64748b;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer {
+            background-color: #1e293b;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .footer p {
+            margin: 8px 0;
+            opacity: 0.8;
+        }
+        .footer-links {
+            margin-top: 20px;
+        }
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .footer-links a:hover {
+            color: #60a5fa;
+        }
+        .highlight {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .icon {
+            font-size: 24px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @media (max-width: 640px) {
+            .content, .header {
+                padding: 25px 20px;
+            }
+            .url {
+                font-size: 16px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>📦 Solicitud de Carga de Pedidos</h1>
+            <p>Sistema de Gestión de Toners - Sur Comercial</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <div class="message-box">
+                    <p style="font-size: 18px; margin-bottom: 20px; color: #1e293b;">
+                        <span class="icon">👋</span> <strong>Buenas,</strong>
+                    </p>
+                    <p style="font-size: 16px; color: #475569; line-height: 1.8;">
+                        Para procesar los pedidos pendientes, por favor ingresen a la siguiente URL 
+                        e inicien sesión con las mismas credenciales que utilizan en 
+                        <span class="highlight">MBUSINESS</span> para realizar sus pedidos.
+                    </p>
+                </div>
+                
+                <div class="url-box">
+                    <p style="color: #0369a1; font-weight: 600; margin-bottom: 15px;">
+                        <span class="icon">🔗</span> Acceso al sistema:
+                    </p>
+                    <a href="http://192.168.8.123:3000/" class="url">
+                        http://192.168.8.123:3000/
+                    </a>
+                    <div style="margin-top: 20px;">
+                        <a href="http://192.168.8.123:3000/" class="btn">
+                            <span class="icon">🌐</span> Acceder al Sistema de Pedidos
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="warning-box">
+                    <p style="color: #92400e; font-weight: 600; margin: 0;">
+                        <span class="icon">⚠️</span> Importante: Utilice sus credenciales de MBUSINESS para acceder al sistema
+                    </p>
+                </div>
+                
+                <div class="thank-you">
+                    <p style="color: #166534; font-size: 18px; font-weight: 600; margin: 0;">
+                        <span class="icon">🙏</span> Desde ya muchas gracias por su colaboración
+                    </p>
+                </div>
+                
+                <div class="signature">
+                    <p style="font-size: 16px; color: #475569;">
+                        <strong>Saludos cordiales,</strong><br>
+                        Equipo de Sistemas
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div>
+                <p style="font-size: 18px; font-weight: 600; margin-bottom: 15px;">
+                    🖨️ Sistema de Gestión de Pedidos
+                </p>
+                <p>Sur Comercial - Gestión eficiente de suministros</p>
+                <p>📧 soporte@surcomercial.com.py</p>
+                <p>📍 Sistema interno de gestión</p>
+                
+                <div class="footer-links">
+                    <a href="#">Soporte</a> |
+                    <a href="#">Manual de Usuario</a> |
+                    <a href="#">Contacto</a>
+                </div>
+                
+                <p style="margin-top: 25px; font-size: 12px; color: #94a3b8;">
+                    Este es un correo automático generado por el sistema. Por favor no responder.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+    // Enviar el correo usando tu transporter existente
+    await transporter.sendMail({
+      from: '"Sistema de Pedidos" <federico.britez@surcomercial.com.py>',
+      to: [
+        "araceli.villalba@surcomercial.com.py",
+        "marlene.franco@surcomercial.com.py",
+        "esther.minho@surcomercial.com.py",
+        "edid.fernandez@surcomercial.com.py",
+        "veronica.acuna@surcomercial.com.py",
+        "karen.ramirez@surcomercial.com.py",
+        "albercio.diaz@surcomercial.com.py",
+      ], // Destinatario principal
+      cc: [
+        "federico.britez@surcomercial.com.py",
+        "dario.ocampos@surcomercial.com.py",
+        // Agrega otros destinatarios según necesites
+      ],
+      subject: "🖨️ Solicitud de Carga de Pedidos", // Cambia el subject como necesites
+      html: htmlBody,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Correo enviado correctamente",
+    });
+  } catch (error) {
+    console.error("Error al enviar correo:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al enviar el correo: " + error.message,
+    });
+  }
+});
+
 // 🔵 Agregar impresora
 app.post("/api/impresoras", async (req, res) => {
   const { ip, sucursal, modelo, drivers_url, tipo, toner_reserva, direccion } =

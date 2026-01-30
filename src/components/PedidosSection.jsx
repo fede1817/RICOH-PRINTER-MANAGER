@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   IoIosArrowBack,
   IoIosArrowForward,
-  IoIosCart,
   IoIosCheckmarkCircle,
   IoIosCloseCircle,
   IoIosAdd,
@@ -13,6 +12,7 @@ import {
   IoIosRefresh,
   IoIosArrowUp,
   IoIosArrowDown,
+  IoIosMail, // 🔥 Nuevo icono para el botón de correo
 } from "react-icons/io";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
@@ -183,9 +183,6 @@ const modelosYToners = {
     tipo: "Blanco y negro"
   }
 };
-
-
-
 
   // 🔥 FUNCIÓN PARA OBTENER INFORMACIÓN DEL TONER SEGÚN EL MODELO
   const getTonerInfo = (modeloImpresora) => {
@@ -447,6 +444,74 @@ const modelosYToners = {
     );
 
     return buttons;
+  };
+
+  // 🔥 FUNCIÓN PARA ENVIAR CORREO DE SOLICITUD DE CARGA
+  const solicitarCargaPedidos = async () => {
+    // Preguntar confirmación al usuario
+    const result = await Swal.fire({
+      title: '¿Enviar correo de solicitud?',
+      text: 'Se enviará un correo solicitando la carga de pedidos',
+      icon: 'question',
+      background: "#2c2c2c",
+      color: "#fff",
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, enviar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      // Mostrar indicador de carga
+      Swal.fire({
+        title: 'Enviando correo...',
+        text: 'Por favor espera',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+        background: "#2c2c2c",
+        color: "#fff"
+      });
+
+      // Enviar solicitud al backend
+      const response = await fetch(`${urls}/api/solicitar-carga`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      Swal.close();
+
+      if (response.ok) {
+        await Swal.fire({
+          icon: 'success',
+          title: '¡Correo enviado!',
+          text: 'La solicitud de carga ha sido enviada correctamente',
+          background: "#2c2c2c",
+          color: "#fff",
+          confirmButtonColor: '#10B981',
+          confirmButtonText: 'Excelente'
+        });
+      } else {
+        throw new Error('Error al enviar el correo');
+      }
+    } catch (error) {
+      console.error('Error al enviar correo:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo enviar el correo. Por favor, inténtalo de nuevo.',
+        background: "#2c2c2c",
+        color: "#fff",
+        confirmButtonColor: '#EF4444',
+        confirmButtonText: 'Entendido'
+      });
+    }
   };
 
   // Función para obtener los modelos según la sucursal seleccionada
@@ -812,7 +877,7 @@ const modelosYToners = {
             left: { style: "thin", color: { rgb: "D0D0D0" } },
             bottom: { style: "thin", color: { rgb: "D0D0D0" } },
             right: { style: "thin", color: { rgb: "D0D0D0" } }
-          },
+        },
           alignment: { vertical: "center" }
         };
         
@@ -1096,14 +1161,26 @@ const modelosYToners = {
           <span className="text-sm">Nuevo Pedido</span>
         </button>
         
-        <button
-          onClick={descargarExcel}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-          title="Descargar Excel de pedidos pendientes"
-        >
-          <IoIosDownload className="text-lg" />
-          <span className="text-sm">Exportar Excel</span>
-        </button>
+        <div className="flex space-x-2">
+          {isAdmin && <button
+            onClick={solicitarCargaPedidos}
+            className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+            title="Solicitar carga de pedidos por correo"
+          >
+            <IoIosMail className="text-lg" />
+            <span className="text-sm">Solicitar Carga</span>
+          </button>
+          }
+          
+          <button
+            onClick={descargarExcel}
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+            title="Descargar Excel de pedidos pendientes"
+          >
+            <IoIosDownload className="text-lg" />
+            <span className="text-sm">Exportar Excel</span>
+          </button>
+        </div>
       </div>
 
       {/* 🔥 CONTROLES DE PAGINACIÓN SUPERIOR */}
