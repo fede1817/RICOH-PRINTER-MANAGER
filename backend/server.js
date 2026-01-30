@@ -44,7 +44,7 @@ const nodemailer = require("nodemailer");
 async function reiniciarImpresoraSNMP(
   ip,
   communityWrite = "private",
-  tipoReinicio = "warm"
+  tipoReinicio = "warm",
 ) {
   return new Promise((resolve, reject) => {
     console.log(`🔄 Intentando reinicio ${tipoReinicio} en ${ip}...`);
@@ -104,7 +104,7 @@ async function reiniciarImpresoraSNMP(
                 sessionAlt.close();
                 if (errorAlt) {
                   reject(
-                    new Error(`No se pudo reiniciar ${ip}: ${error.message}`)
+                    new Error(`No se pudo reiniciar ${ip}: ${error.message}`),
                   );
                 } else {
                   resolve({
@@ -115,7 +115,7 @@ async function reiniciarImpresoraSNMP(
                     ip: ip,
                   });
                 }
-              }
+              },
             );
           }, 1000);
         } else {
@@ -168,7 +168,7 @@ app.post("/api/impresoras/:id/reboot", async (req, res) => {
     // Buscar impresora en la BD solo para obtener IP
     const result = await pool.query(
       "SELECT ip, modelo, sucursal FROM impresoras WHERE id = $1",
-      [id]
+      [id],
     );
 
     if (result.rows.length === 0) {
@@ -191,7 +191,7 @@ app.post("/api/impresoras/:id/reboot", async (req, res) => {
     // Verificar permisos SNMP
     const snmpCheck = await verificarSNMPEscritura(
       impresora.ip,
-      community_write
+      community_write,
     );
 
     if (!snmpCheck.habilitado) {
@@ -207,7 +207,7 @@ app.post("/api/impresoras/:id/reboot", async (req, res) => {
     const resultado = await reiniciarImpresoraSNMP(
       impresora.ip,
       community_write,
-      tipo
+      tipo,
     );
 
     res.json({
@@ -236,7 +236,7 @@ app.get("/api/impresoras/:id/snmp-check", async (req, res) => {
 
     const result = await pool.query(
       "SELECT ip, modelo, estado FROM impresoras WHERE id = $1",
-      [id]
+      [id],
     );
 
     if (result.rows.length === 0) {
@@ -272,7 +272,7 @@ app.get("/api/impresoras/:id/snmp-check", async (req, res) => {
     // Verificar SNMP escritura
     const escrituraSNMP = await verificarSNMPEscritura(
       impresora.ip,
-      community_write
+      community_write,
     );
 
     res.json({
@@ -353,7 +353,7 @@ app.get("/api/impresoras/:id/status", async (req, res) => {
     // Actualizar en la base de datos
     await pool.query(
       "UPDATE impresoras SET estado = $1, ultima_verificacion = $2 WHERE id = $3",
-      [estado.estado, estado.ultima_verificacion, id]
+      [estado.estado, estado.ultima_verificacion, id],
     );
 
     res.json({
@@ -381,14 +381,15 @@ app.get("/api/impresoras/status", async (req, res) => {
         const estado = await Promise.race([
           verificarEstadoImpresora(impresora.ip),
           new Promise(
-            (_, reject) => setTimeout(() => reject(new Error("Timeout")), 40000) // 40 segundos timeout
+            (_, reject) =>
+              setTimeout(() => reject(new Error("Timeout")), 40000), // 40 segundos timeout
           ),
         ]);
 
         // Actualizar en la base de datos
         await pool.query(
           "UPDATE impresoras SET estado = $1, ultima_verificacion = $2 WHERE id = $3",
-          [estado.estado, estado.ultima_verificacion, impresora.id]
+          [estado.estado, estado.ultima_verificacion, impresora.id],
         );
 
         resultados.push({
@@ -402,7 +403,7 @@ app.get("/api/impresoras/status", async (req, res) => {
         // En caso de error, marcar como desconectada
         await pool.query(
           "UPDATE impresoras SET estado = $1, ultima_verificacion = $2 WHERE id = $3",
-          ["desconectada", new Date(), impresora.id]
+          ["desconectada", new Date(), impresora.id],
         );
 
         resultados.push({
@@ -439,7 +440,7 @@ function convertWordToPdf(inputPath, outputDir) {
 
       const outputFile = path.join(
         outputDir,
-        path.basename(inputPath, path.extname(inputPath)) + ".pdf"
+        path.basename(inputPath, path.extname(inputPath)) + ".pdf",
       );
       resolve(outputFile);
     });
@@ -479,7 +480,7 @@ app.post(
       // Buscar impresora en la BD
       const result = await pool.query(
         "SELECT * FROM impresoras WHERE id = $1",
-        [id]
+        [id],
       );
       if (result.rows.length === 0) {
         return res.status(404).json({ error: "Impresora no encontrada" });
@@ -527,7 +528,7 @@ app.post(
       console.error("❌ Error en impresión:", error);
       res.status(500).json({ error: "Error al imprimir: " + error.message });
     }
-  }
+  },
 );
 
 const transporter = nodemailer.createTransport({
@@ -571,31 +572,32 @@ function consultarToner(ip) {
 }
 
 // 🟢 Actualiza SNMP cada 5 minutos y guarda en BD
-setInterval(async () => {
-  try {
-    const { rows: impresoras } = await pool.query("SELECT * FROM impresoras");
+setInterval(
+  async () => {
+    try {
+      const { rows: impresoras } = await pool.query("SELECT * FROM impresoras");
 
-    for (const impresora of impresoras) {
-      const resultado = await consultarToner(impresora.ip);
+      for (const impresora of impresoras) {
+        const resultado = await consultarToner(impresora.ip);
 
-      if (!resultado.error && resultado.toner !== null) {
-        const tonerActual = resultado.toner;
-        const tonerAnterior = impresora.toner_anterior;
-        const ahora = new Date();
-        const ultimaAlerta = impresora.ultima_alerta;
-        const pasaron7Dias =
-          !ultimaAlerta ||
-          ahora - new Date(ultimaAlerta) > 7 * 24 * 60 * 60 * 1000;
+        if (!resultado.error && resultado.toner !== null) {
+          const tonerActual = resultado.toner;
+          const tonerAnterior = impresora.toner_anterior;
+          const ahora = new Date();
+          const ultimaAlerta = impresora.ultima_alerta;
+          const pasaron7Dias =
+            !ultimaAlerta ||
+            ahora - new Date(ultimaAlerta) > 7 * 24 * 60 * 60 * 1000;
 
-        // ACTUALIZACIÓN DE TÓNER Y CONTADOR
-        // Reemplaza la lógica de detección de cambio de tóner con esto:
-        if (tonerAnterior !== null) {
-          const diferencia = Math.abs(tonerActual - tonerAnterior);
+          // ACTUALIZACIÓN DE TÓNER Y CONTADOR
+          // Reemplaza la lógica de detección de cambio de tóner con esto:
+          if (tonerAnterior !== null) {
+            const diferencia = Math.abs(tonerActual - tonerAnterior);
 
-          // Detectar cambio de tóner: aumento significativo (más del 50%)
-          if (tonerActual > tonerAnterior && diferencia > 50) {
-            await pool.query(
-              `UPDATE impresoras SET
+            // Detectar cambio de tóner: aumento significativo (más del 50%)
+            if (tonerActual > tonerAnterior && diferencia > 50) {
+              await pool.query(
+                `UPDATE impresoras SET
                 cambios_toner = cambios_toner + 1,
                 fecha_ultimo_cambio = NOW(),
                 toner_anterior = $1,
@@ -603,70 +605,70 @@ setInterval(async () => {
                 numero_serie = $2,
                 contador_paginas = $3
             WHERE id = $4`,
-              [
-                tonerActual,
-                resultado.numero_serie,
-                resultado.contador,
-                impresora.id,
-              ]
-            );
-            console.log(
-              `🔄 Cambio de tóner detectado en ${impresora.ip}: ${tonerAnterior}% → ${tonerActual}%`
-            );
-          } else if (diferencia > 5) {
-            // Actualizar solo si hay cambio significativo
-            await pool.query(
-              `UPDATE impresoras SET
+                [
+                  tonerActual,
+                  resultado.numero_serie,
+                  resultado.contador,
+                  impresora.id,
+                ],
+              );
+              console.log(
+                `🔄 Cambio de tóner detectado en ${impresora.ip}: ${tonerAnterior}% → ${tonerActual}%`,
+              );
+            } else if (diferencia > 5) {
+              // Actualizar solo si hay cambio significativo
+              await pool.query(
+                `UPDATE impresoras SET
                 toner_anterior = $1,
                 numero_serie = $2,
                 contador_paginas = $3
             WHERE id = $4`,
+                [
+                  tonerActual,
+                  resultado.numero_serie,
+                  resultado.contador,
+                  impresora.id,
+                ],
+              );
+            }
+          } else {
+            // Primera lectura, solo establecer valores iniciales
+            await pool.query(
+              `UPDATE impresoras SET
+            toner_anterior = $1,
+            numero_serie = $2,
+            contador_paginas = $3
+        WHERE id = $4`,
               [
                 tonerActual,
                 resultado.numero_serie,
                 resultado.contador,
                 impresora.id,
-              ]
+              ],
             );
           }
-        } else {
-          // Primera lectura, solo establecer valores iniciales
-          await pool.query(
-            `UPDATE impresoras SET
-            toner_anterior = $1,
-            numero_serie = $2,
-            contador_paginas = $3
-        WHERE id = $4`,
-            [
-              tonerActual,
-              resultado.numero_serie,
-              resultado.contador,
-              impresora.id,
-            ]
-          );
-        }
 
-        // ENVÍO DE CORREO SI EL TÓNER ES BAJO
-        if (
-          tonerActual !== null &&
-          tonerActual > 0 &&
-          tonerActual <= 20 &&
-          pasaron7Dias
-        ) {
-          const correoDestino = "bryan.medina@surcomercial.com.py"; // Cambiar si se requiere
+          // ENVÍO DE CORREO SI EL TÓNER ES BAJO
+          if (
+            tonerActual !== null &&
+            tonerActual > 0 &&
+            tonerActual <= 20 &&
+            pasaron7Dias
+          ) {
+            const correoDestino = "soporte@surcomercial.com.py"; // Cambiar si se requiere
 
-          const info = {
-            modelo: impresora.modelo,
-            numero_serie: resultado.numero_serie ?? "N/A",
-            contador_total: resultado.contador ?? "N/A",
-            sucursal: impresora.sucursal || "Sucursal Desconocida",
-            direccion: impresora.direccion || "Dirección no especificada",
-            telefono: "0987 200316",
-            correo: "bryan.medina@surcomercial.com.py",
-            tipo: impresora.tipo,
-          };
+            const info = {
+              modelo: impresora.modelo,
+              numero_serie: resultado.numero_serie ?? "N/A",
+              contador_total: resultado.contador ?? "N/A",
+              sucursal: impresora.sucursal || "Sucursal Desconocida",
+              direccion: impresora.direccion || "Dirección no especificada",
+              telefono: "0987 200316",
+              correo: "dario.ocampos@surcomercial.com.py",
+              tipo: impresora.tipo,
+            };
 
-          const htmlBody = `
+            const htmlBody = `
             <h3>⚠ Nivel bajo de tóner detectado ${tonerActual}%</h3>
             <h3>⚠ tipo ${impresora.tipo}</h3>
             <h3>⚠ ip: ${impresora.ip}</h3>
@@ -681,31 +683,36 @@ setInterval(async () => {
             </ul>
           `;
 
-          await transporter.sendMail({
-            from: '"Alerta de Tóner" <federico.britez@surcomercial.com.py>',
-            to: correoDestino,
-            cc: ["federico.britez@surcomercial.com.py"],
-            subject: `🖨 Tóner bajo en ${info.sucursal} - ${info.modelo} - ${info.tipo}`,
-            html: htmlBody,
-          });
+            await transporter.sendMail({
+              from: '"Alerta de Tóner" <federico.britez@surcomercial.com.py>',
+              to: correoDestino,
+              cc: [
+                "federico.britez@surcomercial.com.py",
+                "dario.ocampos@surcomercial.com.py",
+              ],
+              subject: `🖨 Tóner bajo en ${info.sucursal} - ${info.modelo} - ${info.tipo}`,
+              html: htmlBody,
+            });
 
-          await pool.query(
-            `UPDATE impresoras SET ultima_alerta = NOW() WHERE id = $1`,
-            [impresora.id]
-          );
+            await pool.query(
+              `UPDATE impresoras SET ultima_alerta = NOW() WHERE id = $1`,
+              [impresora.id],
+            );
 
-          console.log(
-            `📧 Alerta enviada para ${info.modelo} (${info.sucursal})`
-          );
+            console.log(
+              `📧 Alerta enviada para ${info.modelo} (${info.sucursal})`,
+            );
+          }
         }
       }
-    }
 
-    console.log("✅ SNMP actualizado");
-  } catch (error) {
-    console.error("❌ Error en actualización SNMP:", error);
-  }
-}, 5 * 60 * 1000); // cada 5 minutos
+      console.log("✅ SNMP actualizado");
+    } catch (error) {
+      console.error("❌ Error en actualización SNMP:", error);
+    }
+  },
+  5 * 60 * 1000,
+); // cada 5 minutos
 
 // 🔵 Agregar impresora
 app.post("/api/impresoras", async (req, res) => {
@@ -740,7 +747,7 @@ app.post("/api/impresoras", async (req, res) => {
         contador,
         estadoInicial.estado,
         estadoInicial.ultima_verificacion,
-      ]
+      ],
     );
 
     res.status(201).json({
@@ -777,7 +784,7 @@ app.put("/api/impresoras/:id", async (req, res) => {
         ip = $1, sucursal = $2, modelo = $3, drivers_url = $4, tipo = $5,
         toner_reserva = $6, direccion = $7
        WHERE id = $8 RETURNING *`,
-      [ip, sucursal, modelo, drivers_url, tipo, toner_reserva, direccion, id]
+      [ip, sucursal, modelo, drivers_url, tipo, toner_reserva, direccion, id],
     );
 
     if (result.rows.length === 0) {
@@ -797,7 +804,7 @@ app.delete("/api/impresoras/:id", async (req, res) => {
   try {
     const result = await pool.query(
       "DELETE FROM impresoras WHERE id = $1 RETURNING *",
-      [id]
+      [id],
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Impresora no encontrada" });
@@ -819,7 +826,7 @@ app.put("/api/pedido", async (req, res) => {
         ultimo_pedido_fecha = NOW(),
         toner_reserva = toner_reserva + 1
        WHERE id = $1`,
-      [impresora_id]
+      [impresora_id],
     );
     res.status(200).json({ message: "Pedido registrado correctamente" });
   } catch (error) {
@@ -891,7 +898,7 @@ app.post("/api/servidores", async (req, res) => {
     // Verificar si la IP ya existe
     const existing = await pool.query(
       "SELECT id FROM servidores WHERE ip = $1",
-      [ip]
+      [ip],
     );
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: "La IP ya existe en el sistema" });
@@ -910,7 +917,7 @@ app.post("/api/servidores", async (req, res) => {
         tipo || "servidor",
         pingResult.alive ? "activo" : "inactivo",
         pingResult.alive ? `${pingResult.time}ms` : "Timeout",
-      ]
+      ],
     );
 
     res.status(201).json({
@@ -933,7 +940,7 @@ app.put("/api/servidores/:id", async (req, res) => {
       `UPDATE servidores SET
         ip = $1, sucursal = $2, nombre = $3, tipo = $4, updated_at = NOW()
        WHERE id = $5 RETURNING *`,
-      [ip, sucursal, nombre, tipo, id]
+      [ip, sucursal, nombre, tipo, id],
     );
 
     if (result.rows.length === 0) {
@@ -953,7 +960,7 @@ app.delete("/api/servidores/:id", async (req, res) => {
   try {
     const result = await pool.query(
       "DELETE FROM servidores WHERE id = $1 RETURNING *",
-      [id]
+      [id],
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Servidor no encontrado" });
@@ -973,7 +980,7 @@ app.post("/api/servidores/:id/verificar", async (req, res) => {
     // Obtener datos del servidor
     const serverResult = await pool.query(
       "SELECT * FROM servidores WHERE id = $1",
-      [id]
+      [id],
     );
     if (serverResult.rows.length === 0) {
       return res.status(404).json({ error: "Servidor no encontrado" });
@@ -995,7 +1002,7 @@ app.post("/api/servidores/:id/verificar", async (req, res) => {
         pingResult.alive ? "activo" : "inactivo",
         pingResult.alive ? `${pingResult.time}ms` : "Timeout",
         id,
-      ]
+      ],
     );
 
     res.json({
@@ -1032,7 +1039,7 @@ app.post("/api/servidores/verificar-todos", async (req, res) => {
             pingResult.alive ? "activo" : "inactivo",
             pingResult.alive ? `${pingResult.time}ms` : "Timeout",
             servidor.id,
-          ]
+          ],
         );
 
         resultados.push({
@@ -1069,10 +1076,10 @@ app.get("/api/servidores-estadisticas", async (req, res) => {
   try {
     const totalResult = await pool.query("SELECT COUNT(*) FROM servidores");
     const activosResult = await pool.query(
-      "SELECT COUNT(*) FROM servidores WHERE estado = 'activo'"
+      "SELECT COUNT(*) FROM servidores WHERE estado = 'activo'",
     );
     const inactivosResult = await pool.query(
-      "SELECT COUNT(*) FROM servidores WHERE estado = 'inactivo'"
+      "SELECT COUNT(*) FROM servidores WHERE estado = 'inactivo'",
     );
 
     const porTipoResult = await pool.query(`
@@ -1090,7 +1097,7 @@ app.get("/api/servidores-estadisticas", async (req, res) => {
           ? Math.round(
               (parseInt(activosResult.rows[0].count) /
                 parseInt(totalResult.rows[0].count)) *
-                100
+                100,
             )
           : 0,
       porTipo: porTipoResult.rows,
@@ -1104,75 +1111,78 @@ app.get("/api/servidores-estadisticas", async (req, res) => {
 });
 
 // 🔄 Actualización automática cada 5 minutos
-setInterval(async () => {
-  try {
-    console.log("🔄 Iniciando actualización automática de servidores...");
+setInterval(
+  async () => {
+    try {
+      console.log("🔄 Iniciando actualización automática de servidores...");
 
-    const { rows: servidores } = await pool.query("SELECT * FROM servidores");
-    const resultados = [];
+      const { rows: servidores } = await pool.query("SELECT * FROM servidores");
+      const resultados = [];
 
-    for (const servidor of servidores) {
-      try {
-        const pingResult = await ping.promise.probe(servidor.ip, {
-          timeout: 5,
-        });
+      for (const servidor of servidores) {
+        try {
+          const pingResult = await ping.promise.probe(servidor.ip, {
+            timeout: 5,
+          });
 
-        await pool.query(
-          `UPDATE servidores SET
+          await pool.query(
+            `UPDATE servidores SET
             estado = $1,
             latencia = $2,
             ultima_verificacion = NOW()
            WHERE id = $3`,
-          [
-            pingResult.alive ? "activo" : "inactivo",
-            pingResult.alive ? `${pingResult.time}ms` : "Timeout",
-            servidor.id,
-          ]
-        );
+            [
+              pingResult.alive ? "activo" : "inactivo",
+              pingResult.alive ? `${pingResult.time}ms` : "Timeout",
+              servidor.id,
+            ],
+          );
 
-        resultados.push({
-          id: servidor.id,
-          ip: servidor.ip,
-          estado: pingResult.alive ? "activo" : "inactivo",
-          latencia: pingResult.alive ? `${pingResult.time}ms` : "Timeout",
-          success: true,
-        });
+          resultados.push({
+            id: servidor.id,
+            ip: servidor.ip,
+            estado: pingResult.alive ? "activo" : "inactivo",
+            latencia: pingResult.alive ? `${pingResult.time}ms` : "Timeout",
+            success: true,
+          });
 
-        console.log(
-          `✅ ${servidor.ip} - ${pingResult.alive ? "Activo" : "Inactivo"}`
-        );
-      } catch (error) {
-        await pool.query(
-          `UPDATE servidores SET
+          console.log(
+            `✅ ${servidor.ip} - ${pingResult.alive ? "Activo" : "Inactivo"}`,
+          );
+        } catch (error) {
+          await pool.query(
+            `UPDATE servidores SET
             estado = 'inactivo',
             latencia = 'Error',
             ultima_verificacion = NOW()
            WHERE id = $1`,
-          [servidor.id]
-        );
+            [servidor.id],
+          );
 
-        resultados.push({
-          id: servidor.id,
-          ip: servidor.ip,
-          estado: "inactivo",
-          latencia: "Error",
-          success: false,
-          error: error.message,
-        });
+          resultados.push({
+            id: servidor.id,
+            ip: servidor.ip,
+            estado: "inactivo",
+            latencia: "Error",
+            success: false,
+            error: error.message,
+          });
 
-        console.log(`❌ ${servidor.ip} - Error: ${error.message}`);
+          console.log(`❌ ${servidor.ip} - Error: ${error.message}`);
+        }
       }
-    }
 
-    const exitosos = resultados.filter((r) => r.success).length;
-    const total = resultados.length;
-    console.log(
-      `📊 Actualización completada: ${exitosos}/${total} servidores activos`
-    );
-  } catch (error) {
-    console.error("❌ Error en actualización automática:", error);
-  }
-}, 5 * 60 * 1000); // 5 minutos
+      const exitosos = resultados.filter((r) => r.success).length;
+      const total = resultados.length;
+      console.log(
+        `📊 Actualización completada: ${exitosos}/${total} servidores activos`,
+      );
+    } catch (error) {
+      console.error("❌ Error en actualización automática:", error);
+    }
+  },
+  5 * 60 * 1000,
+); // 5 minutos
 
 console.log("🕐 Actualización automática programada cada 5 minutos");
 
@@ -1241,7 +1251,7 @@ app.put("/api/pedidos/:id/procesar", async (req, res) => {
     // Verificar si el pedido existe
     const pedidoCheck = await pool.query(
       "SELECT * FROM pedidos WHERE id = $1",
-      [pedidoId]
+      [pedidoId],
     );
 
     if (pedidoCheck.rows.length === 0) {
@@ -1269,7 +1279,7 @@ app.put("/api/pedidos/:id/pendiente", async (req, res) => {
     // Verificar si el pedido existe
     const pedidoCheck = await pool.query(
       "SELECT * FROM pedidos WHERE id = $1",
-      [pedidoId]
+      [pedidoId],
     );
 
     if (pedidoCheck.rows.length === 0) {
@@ -1297,7 +1307,7 @@ app.delete("/api/pedidos/:id", async (req, res) => {
     // Verificar si el pedido existe
     const pedidoCheck = await pool.query(
       "SELECT * FROM pedidos WHERE id = $1",
-      [pedidoId]
+      [pedidoId],
     );
 
     if (pedidoCheck.rows.length === 0) {
