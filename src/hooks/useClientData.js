@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePhoneFormatter } from "./usePhoneFormatter";
 import { useRUCValidation } from "./useRUCValidation";
 import { excelData } from "../excelData";
+import { useAuth } from "../context/AuthContext";
 
 export const useClientData = (getNombreListaPrecioExterno) => {
   const [codCenso, setCodCenso] = useState("");
@@ -18,23 +19,20 @@ export const useClientData = (getNombreListaPrecioExterno) => {
   const [grupoClienteData, setGrupoClienteData] = useState([]);
   const { formatearNumeroParaguayo, formatearRUC } = usePhoneFormatter();
   const { validarRUC, validandoRUC: validandoRUCExternal } = useRUCValidation();
+  const { authCredentials } = useAuth();
 
   // 🔥 NUEVA FUNCIÓN: Cargar grupos de cliente
   const fetchGrupoCliente = async () => {
     try {
-      const credentials = btoa(
-        `${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`
-      );
-
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/grupocliente?codempresa=15`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${credentials}`,
+            Authorization: `Basic ${authCredentials}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -58,7 +56,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
 
     // Buscar el grupo cliente correspondiente
     const grupoCliente = grupoClienteData.find(
-      (grupo) => grupo.codgrupoclienteerp === canaleserp.codsubcanalerp2
+      (grupo) => grupo.codgrupoclienteerp === canaleserp.codsubcanalerp2,
     );
 
     if (grupoCliente) {
@@ -72,10 +70,6 @@ export const useClientData = (getNombreListaPrecioExterno) => {
   // 🔥 FUNCIÓN CORREGIDA: Obtener datos del cliente desde el sistema ERP
   const fetchClienteERP = async (codClienteActual) => {
     try {
-      const credentials = btoa(
-        `${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`
-      );
-
       console.log("🔍 Consultando cliente ERP:", codClienteActual);
 
       const response = await fetch(
@@ -84,9 +78,9 @@ export const useClientData = (getNombreListaPrecioExterno) => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${credentials}`,
+            Authorization: `Basic ${authCredentials}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -109,27 +103,27 @@ export const useClientData = (getNombreListaPrecioExterno) => {
         });
         console.log(
           "🔍 Campos del cliente ERP activo:",
-          Object.keys(clienteERPActivo)
+          Object.keys(clienteERPActivo),
         );
         console.log(
           "🎯 Canal del cliente ERP activo:",
-          clienteERPActivo.canal || "No encontrado"
+          clienteERPActivo.canal || "No encontrado",
         );
         console.log(
           "📝 Datos completos del cliente ERP activo:",
-          clienteERPActivo
+          clienteERPActivo,
         );
       } else {
         console.log(
           "⚠️ No se encontró cliente ERP activo con código:",
-          codClienteActual
+          codClienteActual,
         );
         // 🔥 SI NO HAY ACTIVO, TOMAR EL PRIMERO COMO FALLBACK
         const clienteFallback = data && data.length > 0 ? data[0] : null;
         if (clienteFallback) {
           console.log(
             "🔄 Usando cliente fallback (primer registro):",
-            clienteFallback.canal
+            clienteFallback.canal,
           );
           return clienteFallback;
         }
@@ -147,7 +141,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
   // 🔥 FUNCIÓN MEJORADA PARA VALIDAR CAMBIOS EN ACTUALIZACIONES
   const validarCambiosEnActualizacion = async (
     dataFormateado,
-    codClienteActual
+    codClienteActual,
   ) => {
     const errores = [];
     const advertencias = [];
@@ -159,7 +153,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
 
     console.log(
       "🔍 Iniciando validación de canal para cliente:",
-      codClienteActual
+      codClienteActual,
     );
     console.log("📊 Canal en censo:", dataFormateado.canal);
 
@@ -169,7 +163,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
     if (!clienteERP) {
       console.log("⚠️ No se pudo obtener datos del cliente ERP");
       errores.push(
-        "⚠️ No se pudo verificar los datos del cliente en el sistema"
+        "⚠️ No se pudo verificar los datos del cliente en el sistema",
       );
       return { errores, advertencias };
     }
@@ -188,7 +182,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
           `No se puede cambiar de canal en actualizaciones. ` +
           `Canal en sistema: ${canalERP} (${obtenerNombreCanal(canalERP)}) → ` +
           `Canal en censo: ${dataFormateado.canal} (${obtenerNombreCanal(
-            dataFormateado.canal
+            dataFormateado.canal,
           )})`;
 
         console.log("🚫 Error de validación:", mensajeError);
@@ -202,7 +196,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
         canalCenso: dataFormateado.canal,
       });
       advertencias.push(
-        "⚠️ No se pudo realizar la validación completa del canal"
+        "⚠️ No se pudo realizar la validación completa del canal",
       );
     }
 
@@ -253,10 +247,6 @@ export const useClientData = (getNombreListaPrecioExterno) => {
     setCargando(true);
 
     try {
-      const credentials = btoa(
-        `${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`
-      );
-
       // 🔥 CARGAR GRUPOS DE CLIENTE EN PARALELO
       const [clienteResponse, grupoClienteResponse] = await Promise.all([
         fetch(
@@ -265,9 +255,9 @@ export const useClientData = (getNombreListaPrecioExterno) => {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Basic ${credentials}`,
+              Authorization: `Basic ${authCredentials}`,
             },
-          }
+          },
         ),
         fetchGrupoCliente(), // Cargar grupos de cliente
       ]);
@@ -277,7 +267,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
           throw new Error("Autenticación fallida. Verifique sus credenciales.");
         } else if (clienteResponse.status === 404) {
           throw new Error(
-            "No se encontró el cliente con el código de censo proporcionado."
+            "No se encontró el cliente con el código de censo proporcionado.",
           );
         } else {
           throw new Error(`Error HTTP: ${clienteResponse.status}`);
@@ -339,7 +329,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
       console.log("🔍 Validando cambios en actualización...");
       const validacionCanal = await validarCambiosEnActualizacion(
         dataFormateado,
-        codClienteActual
+        codClienteActual,
       );
       nuevosErrores.push(...validacionCanal.errores);
       nuevasAdvertencias.push(...validacionCanal.advertencias);
@@ -352,7 +342,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
 
     // Si hay errores de canal, no continuar con otras validaciones de canal
     const hayErroresDeCanal = nuevosErrores.some((error) =>
-      error.includes("canal")
+      error.includes("canal"),
     );
 
     // Validar RUC con la API (tu código existente)
@@ -362,7 +352,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
       // Mostrar advertencia si hubo cambios de formato
       if (dataOriginal.ruc !== rucFormateado) {
         nuevasAdvertencias.push(
-          `RUC formateado: ${dataOriginal.ruc} → ${rucFormateado}`
+          `RUC formateado: ${dataOriginal.ruc} → ${rucFormateado}`,
         );
       }
 
@@ -370,7 +360,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
       const regexRUC = /^(\d{5,8}(-\d{1})?|\d{6,9})$/;
       if (!regexRUC.test(rucFormateado)) {
         nuevosErrores.push(
-          "El formato del RUC no es válido. Formatos aceptados: 12345, 1234567 o 1234567-0"
+          "El formato del RUC no es válido. Formatos aceptados: 12345, 1234567 o 1234567-0",
         );
       } else {
         // Validar con API solo si el formato es válido
@@ -378,7 +368,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
           const resultadoValidacion = await validarRUC(
             rucFormateado,
             esAlta,
-            codClienteActual
+            codClienteActual,
           );
 
           // En la función validarDatos dentro de useClientData:
@@ -393,7 +383,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
               } else {
                 // Mensaje de respaldo
                 nuevasAdvertencias.push(
-                  `✅ RUC válido para actualización. Cliente: ${resultadoValidacion.clienteExistente.razonsocial}`
+                  `✅ RUC válido para actualización. Cliente: ${resultadoValidacion.clienteExistente.razonsocial}`,
                 );
               }
 
@@ -403,12 +393,12 @@ export const useClientData = (getNombreListaPrecioExterno) => {
                 !resultadoValidacion.clienteExistente.activo
               ) {
                 nuevasAdvertencias.push(
-                  "⚠️ ATENCIÓN: El cliente existe pero está INACTIVO. Se requiere reactivación en el sistema."
+                  "⚠️ ATENCIÓN: El cliente existe pero está INACTIVO. Se requiere reactivación en el sistema.",
                 );
               }
             } else if (esAlta) {
               nuevasAdvertencias.push(
-                "✅ RUC disponible para alta de nuevo cliente"
+                "✅ RUC disponible para alta de nuevo cliente",
               );
             }
           }
@@ -416,7 +406,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
           setValidacionRUC(resultadoValidacion);
         } catch (error) {
           nuevasAdvertencias.push(
-            `⚠️ No se pudo validar el RUC con el sistema: ${error.message}`
+            `⚠️ No se pudo validar el RUC con el sistema: ${error.message}`,
           );
         }
       }
@@ -427,12 +417,12 @@ export const useClientData = (getNombreListaPrecioExterno) => {
 
     if (dataFormateado.canal) {
       const canalEnExcel = excelData.find(
-        (item) => item.codigo === dataFormateado.canal
+        (item) => item.codigo === dataFormateado.canal,
       );
 
       if (!canalEnExcel) {
         nuevosErrores.push(
-          `El canal ${dataFormateado.canal} no existe en la configuración`
+          `El canal ${dataFormateado.canal} no existe en la configuración`,
         );
       } else {
         // Validar lista de precios según el canal
@@ -448,10 +438,10 @@ export const useClientData = (getNombreListaPrecioExterno) => {
           // 🔥 USAR LA FUNCIÓN EXTERNA para obtener el nombre
           nuevosErrores.push(
             `La lista de precio ${getNombreListaPrecioExterno(
-              dataFormateado.codlistaprecioerp
+              dataFormateado.codlistaprecioerp,
             )} no es válida para el canal ${
               dataFormateado.canaleserp?.nombrecanal
-            }`
+            }`,
           );
         }
 
@@ -461,12 +451,12 @@ export const useClientData = (getNombreListaPrecioExterno) => {
               item.sucursal === dataFormateado.sucursal.codsucursalerp &&
               item.codigo === dataFormateado.canaleserp.codcanalerp &&
               item.subCanal1 === dataFormateado.canaleserp.nombresubcanal &&
-              item.subCanal2 === dataFormateado.canaleserp.nombresubcanal2
+              item.subCanal2 === dataFormateado.canaleserp.nombresubcanal2,
           );
 
           if (!subcanalValido) {
             nuevosErrores.push(
-              `La combinación de subcanales puede no ser válida canal: ${dataFormateado.canaleserp.nombrecanal} subcanal1: ${dataFormateado.canaleserp.nombresubcanal} // subcanal2: ${dataFormateado.canaleserp.nombresubcanal2} `
+              `La combinación de subcanales puede no ser válida canal: ${dataFormateado.canaleserp.nombrecanal} subcanal1: ${dataFormateado.canaleserp.nombresubcanal} // subcanal2: ${dataFormateado.canaleserp.nombresubcanal2} `,
             );
           }
         }
@@ -489,7 +479,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
       !dataFormateado.celular.startsWith("09")
     ) {
       nuevasAdvertencias.push(
-        `El número de celular no tiene formato válido: ${dataFormateado.celular}. Formato esperado: 09XXXXXXXX`
+        `El número de celular no tiene formato válido: ${dataFormateado.celular}. Formato esperado: 09XXXXXXXX`,
       );
     }
 
@@ -500,7 +490,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
       !dataFormateado.telefono.startsWith("09")
     ) {
       nuevasAdvertencias.push(
-        `El número de teléfono no tiene formato válido: ${dataFormateado.telefono}. Formato esperado: 09XXXXXXXX`
+        `El número de teléfono no tiene formato válido: ${dataFormateado.telefono}. Formato esperado: 09XXXXXXXX`,
       );
     }
 
@@ -510,7 +500,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
       dataOriginal.celular !== dataFormateado.celular
     ) {
       nuevasAdvertencias.push(
-        `Celular formateado: ${dataOriginal.celular} → ${dataFormateado.celular}`
+        `Celular formateado: ${dataOriginal.celular} → ${dataFormateado.celular}`,
       );
     }
 
@@ -519,14 +509,14 @@ export const useClientData = (getNombreListaPrecioExterno) => {
       dataOriginal.telefono !== dataFormateado.telefono
     ) {
       nuevasAdvertencias.push(
-        `Teléfono formateado: ${dataOriginal.telefono} → ${dataFormateado.telefono}`
+        `Teléfono formateado: ${dataOriginal.telefono} → ${dataFormateado.telefono}`,
       );
     }
 
     // Validar coordenadas
     if (!dataFormateado.latitud || !dataFormateado.longitud) {
       nuevasAdvertencias.push(
-        "Faltan coordenadas GPS. Son recomendables para ubicar al cliente."
+        "Faltan coordenadas GPS. Son recomendables para ubicar al cliente.",
       );
     }
 
@@ -538,7 +528,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
         `${dataFormateado.canaleserp.nombresubcanal2} (${dataFormateado.canaleserp.codsubcanalerp2})`
       ) {
         nuevasAdvertencias.push(
-          `SubGrupo 2 mejorado: ${dataFormateado.canaleserp.nombresubcanal2} → ${subgrupo2Value}`
+          `SubGrupo 2 mejorado: ${dataFormateado.canaleserp.nombresubcanal2} → ${subgrupo2Value}`,
         );
       }
     }
@@ -548,7 +538,7 @@ export const useClientData = (getNombreListaPrecioExterno) => {
       nuevasAdvertencias.push("📝 Operación: ALTA de nuevo cliente");
     } else {
       nuevasAdvertencias.push(
-        "✏️ Operación: ACTUALIZACIÓN de cliente existente"
+        "✏️ Operación: ACTUALIZACIÓN de cliente existente",
       );
     }
 

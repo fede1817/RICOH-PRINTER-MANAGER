@@ -9,6 +9,7 @@ import { useClientData } from "../hooks/useClientData";
 import { useClipboard } from "../hooks/useClipboard";
 import Mapa from "./Mapa";
 import "./Censo.css";
+import { useAuth } from "../context/AuthContext";
 
 function Censo() {
   const [currentView, setCurrentView] = useState("home");
@@ -20,6 +21,7 @@ function Censo() {
   const [vendedores, setVendedores] = useState([]);
   const [supervisores, setSupervisores] = useState([]);
   const [listasCargadas, setListasCargadas] = useState(false);
+  const { authCredentials } = useAuth();
 
   // 🔥 PRIMERO: Declarar la función getNombreListaPrecio ANTES del hook
   const getNombreListaPrecio = (codListaPrecioErp) => {
@@ -63,17 +65,13 @@ function Censo() {
   // Función para cargar supervisores
   const fetchSupervisores = async () => {
     try {
-      const credentials = btoa(
-        `${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`
-      );
-
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/supervisores?codempresa=15&codsucursal=23&multisucursal=true`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${credentials}`,
+            Authorization: `Basic ${authCredentials}`,
           },
         }
       );
@@ -106,9 +104,6 @@ function Censo() {
   // Función para cargar vendedores
   const fetchVendedores = async () => {
     try {
-      const credentials = btoa(
-        `${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`
-      );
 
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/vendedores?codempresa=15`,
@@ -116,7 +111,7 @@ function Censo() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${credentials}`,
+            Authorization: `Basic ${authCredentials}`,
           },
         }
       );
@@ -149,9 +144,6 @@ function Censo() {
   // Función para cargar las listas de precios
   const fetchListasPrecio = async () => {
     try {
-      const credentials = btoa(
-        `${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`
-      );
 
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/listaprecios?codempresa=15`,
@@ -159,7 +151,7 @@ function Censo() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${credentials}`,
+            Authorization: `Basic ${authCredentials}`,
           },
         }
       );

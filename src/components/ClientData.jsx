@@ -4,6 +4,7 @@ import SelectBuscable from './SelectBuscable';
 import { FaEye } from 'react-icons/fa';
 import "./Censo.css";
 import ModalRUC from './ModalRUC';
+import { useAuth } from "../context/AuthContext";
 
 const ClientData = ({ 
   clienteData, 
@@ -40,6 +41,7 @@ const ClientData = ({
   // 🔥 ESTADOS PARA EL MODAL DE RUC (SIMPLIFICADOS)
   const [showRucModal, setShowRucModal] = useState(false);
   const [selectedRuc, setSelectedRuc] = useState('');
+  const { authCredentials } = useAuth();
 
   // 🔥 OPCIONES PARA DÍAS DE VISITA
   const opcionesDiasVisita = [
@@ -128,7 +130,6 @@ const ClientData = ({
   // 🔥 FUNCIÓN PARA OBTENER DATOS DE ZONAS Y SUBZONAS
   const fetchZonasData = async () => {
     try {
-      const credentials = btoa(`${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`);
       
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/zonaserp?codempresa=15`,
@@ -136,7 +137,7 @@ const ClientData = ({
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${credentials}`
+            'Authorization': `Basic ${authCredentials}`
           }
         }
       );
@@ -193,7 +194,6 @@ const ClientData = ({
     }
 
     try {
-      const credentials = btoa(`${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`);
       
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/clientes?codempresa=15&codclienteerp=${codClienteERP}`,
@@ -201,7 +201,7 @@ const ClientData = ({
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${credentials}`
+            'Authorization': `Basic ${authCredentials}`
           }
         }
       );
@@ -352,7 +352,6 @@ const ClientData = ({
   useEffect(() => {
     const fetchCanalesData = async () => {
       try {
-        const credentials = btoa(`${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`);
         
         const response = await fetch(
           `https://apps.mobile.com.py:8443/mbusiness/rest/private/canaleserp?codempresa=15`,
@@ -360,7 +359,7 @@ const ClientData = ({
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Basic ${credentials}`
+              'Authorization': `Basic ${authCredentials}`
             }
           }
         );
@@ -496,7 +495,6 @@ const ClientData = ({
 
   const guardarDatosEnAPI = async (datos) => {
     try {
-      const credentials = btoa(`${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`);
       
       const canalSeleccionado = canalesData.find(item => 
         item.codcanalerp === datos.canal && 
@@ -570,7 +568,7 @@ const ClientData = ({
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${credentials}`
+            'Authorization': `Basic ${authCredentials}`
           },
           body: JSON.stringify(payload)
         }

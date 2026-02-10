@@ -6,6 +6,7 @@ import DeviceGrid from './DeviceGrid'
 import Loading from './Loading'
 import Error from './Error'
 import NoResults from './NoResults'
+import { useAuth } from "../context/AuthContext";
 
 
 function CellManager() {
@@ -17,20 +18,18 @@ function CellManager() {
   const [selectedSucursal, setSelectedSucursal] = useState('')
   const [selectedPowerStatus, setSelectedPowerStatus] = useState('')
   const [selectedActiveStatus, setSelectedActiveStatus] = useState('todos') // Nuevo estado para filtrar por activo/inactivo
-
+const { authCredentials } = useAuth();
   const fetchTrackingData = async () => {
     try {
       setLoading(true)
-      setError(null)
-      const credentials = btoa(`${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`)
-      
+      setError(null)      
       const response = await fetch(
         `https://apps.mobile.com.py:8443/mbusiness/rest/private/rastreo/resumenzona?codusuario=3542`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${credentials}`,
+            Authorization: `Basic ${authCredentials}`,
           },
         }
       )

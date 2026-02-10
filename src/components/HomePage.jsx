@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import SearchSection from "./SearchSection";
 import "./HomePage.css";
+import { useAuth } from "../context/AuthContext";
 
 const HomePage = ({ onSelectCenso }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,7 +25,7 @@ const HomePage = ({ onSelectCenso }) => {
   // 🔥 NUEVOS ESTADOS PARA PAGINACIÓN
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
+const { authCredentials } = useAuth();
   // Función para formatear fechas en YYYY-MM-DD
   const formatDate = (date) => {
     return date.toISOString().split('T')[0];
@@ -204,10 +205,6 @@ const HomePage = ({ onSelectCenso }) => {
     setError("");
 
     try {
-      const credentials = btoa(
-        `${"federico.britez@surcomercial.com.py"}:${"Surcomercial.fb"}`
-      );
-
       // Usar las fechas proporcionadas o las del estado
       const fechaInicioUsar = inicio || fechaInicio;
       const fechaFinUsar = fin || fechaFin;
@@ -218,7 +215,7 @@ const HomePage = ({ onSelectCenso }) => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${credentials}`,
+            Authorization: `Basic ${authCredentials}`,
           },
         }
       );

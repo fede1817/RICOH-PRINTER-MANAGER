@@ -25,7 +25,7 @@ import {
   IoIosPersonAdd,
 } from "react-icons/io";
 import { FiNavigation } from "react-icons/fi";
-
+import { AuthProvider } from "./context/AuthContext";
 // Lazy load de componentes pesados - SOLO se cargan cuando se necesitan
 const PrinterTable = lazy(() => import("./components/PrinterTable"));
 const ServerStatusTable = lazy(() => import("./components/ServerStatusTable"));
@@ -154,7 +154,7 @@ const Sidebar = React.memo(
         )}
       </div>
     );
-  }
+  },
 );
 
 Sidebar.displayName = "Sidebar";
@@ -309,7 +309,7 @@ function App() {
 
   const actualizarImpresora = useCallback((id, nuevosDatos) => {
     setImpresoras((prev) =>
-      prev.map((imp) => (imp.id === id ? { ...imp, ...nuevosDatos } : imp))
+      prev.map((imp) => (imp.id === id ? { ...imp, ...nuevosDatos } : imp)),
     );
   }, []);
 
@@ -359,7 +359,7 @@ function App() {
           }
         });
     },
-    [isAdmin]
+    [isAdmin],
   );
 
   // 🔥 EFFECT PARA CARGA INICIAL Y VERIFICACIÓN DE AUTENTICACIÓN
@@ -419,7 +419,7 @@ function App() {
         setTablaActiva("pedidos");
       }
     },
-    []
+    [],
   );
 
   // 🔥 HANDLE LOGOUT OPTIMIZADO
@@ -492,7 +492,7 @@ function App() {
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(
-            errorData.message || "Error en la respuesta del servidor"
+            errorData.message || "Error en la respuesta del servidor",
           );
         }
 
@@ -523,7 +523,7 @@ function App() {
         });
       }
     },
-    [editingId, formData, fetchImpresoras]
+    [editingId, formData, fetchImpresoras],
   );
 
   // 🔥 HANDLE DELETE OPTIMIZADO
@@ -572,7 +572,7 @@ function App() {
         }
       }
     },
-    [fetchImpresoras]
+    [fetchImpresoras],
   );
 
   // 🔥 HANDLE EDIT OPTIMIZADO
@@ -655,7 +655,7 @@ function App() {
         }
       }
     },
-    [fetchImpresoras]
+    [fetchImpresoras],
   );
 
   // 🔥 MENU ITEMS MEMOIZADO

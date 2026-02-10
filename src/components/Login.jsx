@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { IoIosLock, IoIosMail, IoIosLogIn } from "react-icons/io";
 import Swal from 'sweetalert2';
+import { useAuth } from "../context/AuthContext";
 
 const Login = ({ onLogin }) => {
   const [credentials, setCredentials] = useState({
@@ -8,6 +9,7 @@ const Login = ({ onLogin }) => {
     password: ''
   });
   const [loading, setLoading] = useState(false);
+  const { setUser, setAuthCredentials, setIsAdmin } = useAuth();
 
   const handleInputChange = (e) => {
     setCredentials(prev => ({
@@ -72,7 +74,9 @@ const Login = ({ onLogin }) => {
         if (censoParam || sectionParam === 'censos') {
           seccionInicial = "censos";
         }
-        
+        setUser(userData);
+setAuthCredentials(credentialsBase64);
+setIsAdmin(isAdmin);
         // Guardar datos del usuario en localStorage
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('isAuthenticated', 'true');
