@@ -31,7 +31,7 @@ import ServerModal from "./ServerModal";
 import PingApp from "./Ping"; // 🔧 IMPORTAR COMPONENTE PING
 import "./ServerStatusTable.css";
 
-const ServerStatusTable = () => {
+const ServerStatusTable = ({urls}) => {
   const [servers, setServers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +46,6 @@ const ServerStatusTable = () => {
   const [editingServer, setEditingServer] = useState(null);
   const [showPingModal, setShowPingModal] = useState(false); // 🔧 ESTADO PARA MODAL PING
 
-  const API_BASE_URL = "http://localhost:3001/api";
 
   // 🔧 FUNCIÓN PARA ABRIR MODAL PING
   const openPingModal = () => {
@@ -164,7 +163,7 @@ const ServerStatusTable = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch(`${API_BASE_URL}/servidores`);
+      const response = await fetch(`${urls}/api/servidores`);
 
       if (!response.ok) {
         throw new Error("Error al cargar los servidores");
@@ -189,7 +188,7 @@ const ServerStatusTable = () => {
   // Cargar estadísticas
   const loadStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/servidores-estadisticas`);
+      const response = await fetch(`${urls}/api/servidores-estadisticas`);
       if (response.ok) {
         const data = await response.json();
         setStats(data);
@@ -219,7 +218,7 @@ const ServerStatusTable = () => {
       });
 
       const response = await fetch(
-        `${API_BASE_URL}/servidores/${serverId}/verificar`,
+        `${urls}/api/servidores/${serverId}/verificar`,
         { method: "POST" }
       );
 
@@ -286,7 +285,7 @@ const ServerStatusTable = () => {
       });
 
       const response = await fetch(
-        `${API_BASE_URL}/servidores/verificar-todos`,
+        `${urls}/api/servidores/verificar-todos`,
         {
           method: "POST",
         }
@@ -334,7 +333,7 @@ const ServerStatusTable = () => {
   // Agregar nuevo servidor
   const handleAddServer = async (formData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/servidores`, {
+      const response = await fetch(`${urls}/api/servidores`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -361,7 +360,7 @@ const ServerStatusTable = () => {
   const handleEditServer = async (formData) => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/servidores/${editingServer.id}`,
+        `${urls}/api/servidores/${editingServer.id}`,
         {
           method: "PUT",
           headers: {
@@ -413,7 +412,7 @@ const ServerStatusTable = () => {
           color: "#f1f5f9",
         });
 
-        const response = await fetch(`${API_BASE_URL}/servidores/${serverId}`, {
+        const response = await fetch(`${urls}/api/servidores/${serverId}`, {
           method: "DELETE",
         });
 
