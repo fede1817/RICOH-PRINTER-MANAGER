@@ -53,7 +53,7 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState(null);
   const { user1 } = useAuth();
-  const urls = "http://192.168.8.165:3001";
+  const urls = "http://192.168.8.166:3001";
 
   // Verificar autenticación al cargar
   useEffect(() => {
