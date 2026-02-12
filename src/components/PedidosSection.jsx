@@ -12,20 +12,22 @@ import {
   IoIosRefresh,
   IoIosArrowUp,
   IoIosArrowDown,
-  IoIosMail, // 🔥 Nuevo icono para el botón de correo
+  IoIosMail,
 } from "react-icons/io";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
+import { useAuth } from "../context/AuthContext"; // Ajusta la ruta según donde esté tu contexto
 
 const PedidosSection = ({urls}) => {
+  const { user1 } = useAuth(); // 🔥 Obtener usuario del contexto
+  
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
-    solicitante: "",
     sucursal: "",
     modelo_impresora: "",
     tipo_toner: "",
     cantidad: "",
-    toner_modelo: "" // 🔥 NUEVO CAMPO PARA EL MODELO DE TONER
+    toner_modelo: ""
   });
   const [pedidos, setPedidos] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -46,11 +48,8 @@ const PedidosSection = ({urls}) => {
     setIsAdmin(adminStatus === 'true');
   }, []);
 
+  // 🔥 MODIFICAR steps - eliminar el paso de solicitante
   const steps = [
-    {
-      title: "Solicitante",
-      fields: ["solicitante"]
-    },
     {
       title: "Sucursal", 
       fields: ["sucursal"]
@@ -81,108 +80,103 @@ const PedidosSection = ({urls}) => {
   ];
 
   // 🔥 MAPEO COMPLETO DE MODELOS DE IMPRESORA A TONERS
-const modelosYToners = {
-  "HP LaserJet Pro MFP M135w": {
-    modelos: ["HP LaserJet Pro MFP M135w"],
-    toner: "HP 105A (W1105A)",
-    tipo: "Blanco y negro"
-  },
-  "HP LaserJet P1102w": {
-    modelos: ["HP LaserJet P1102w"],
-    toner: "HP 85A (CE285A)",
-    tipo: "Blanco y negro"
-  },
-  "HP LaserJet M111w": {
-    modelos: ["HP LaserJet M111w"],
-    toner: "HP 150A (W1500A)",
-    tipo: "Blanco y negro"
-  },
-  "HP LaserJet Pro M107w": {
-    modelos: ["HP LaserJet Pro M107w"],
-    toner: "HP 105A (W1105A)",
-    tipo: "Blanco y negro"
-  },
-  "HP LaserJet Pro MFP M201": {
-    modelos: ["HP LaserJet Pro MFP M201", "HP LaserJet Pro M201"],
-    toner: "HP 83A (CF283A)",
-    tipo: "Blanco y negro"
-  },
-  "HP DESKJET INK ADVANTAGE 3775": {
-    modelos: ["HP DESKJET INK ADVANTAGE 3775"],
-    toner: "HP 664 (F6U19AL)",
-    tipo: "Color"
-  },
-  "HP LaserJet Pro M203": {
-    modelos: ["HP LaserJet Pro M203"],
-    toner: "HP 30A (CF230A)",
-    tipo: "Blanco y negro"
-  },
-  "HP LaserJet Pl 102w": {
-    modelos: ["HP LaserJet P1102w", "HP LaserJet PL 102w"],
-    toner: "HP 85A (CE285A)",
-    tipo: "Blanco y negro"
-  },
-  "HP DESKJET 2130": {
-    modelos: ["HP DESKJET 2130"],
-    toner: "HP 664 (F6U19AL)",
-    tipo: "Color"
-  },
-  "HP DESKJET 2700": {
-    modelos: ["HP DESKJET 2700"],
-    toner: "HP 667",
-    tipo: "Color"
-  },
-  "HP Deskjet Ink Advantage 2874": {
-    modelos: ["HP Deskjet Ink Advantage 2874"],
-    toner: "HP 667",
-    tipo: "Color"
-  },
-
-  // 🔥 NUEVO — modelo que pediste
-  "HP LaserJet Pro M127FN": {
-    modelos: ["HP LaserJet Pro M127FN"],
-    toner: "HP 83A(CF283A)",
-    tipo: "Blanco y negro"
-  },
-
-  "HP Deskjet Ink Advantage 2375": {
-    modelos: ["HP Deskjet Ink Advantage 2375"],
-    toner: "HP 667",
-    tipo: "Color"
-  },
-  "HP LaserJet Pro M203dw": {
-    modelos: ["HP LaserJet Pro M203dw"],
-    toner: "HP 30A (CF230A)",
-    tipo: "Blanco y negro"
-  },
-  "HP DeskJet 2775": {
-    modelos: ["HP DeskJet 2775"],
-    toner: "HP 667",
-    tipo: "Color"
-  },
-  "HP LaserJet Pro M102w": {
-    modelos: ["HP LaserJet Pro M102w"],
-    toner: "HP 17A (CF217A)", // CORREGIDO
-    tipo: "Blanco y negro"
-  },
-  "HP LaserJet Pro M201dw": {
-    modelos: ["HP LaserJet Pro M201dw"],
-    toner: "HP 83A (CF283A)",
-    tipo: "Blanco y negro"
-  },
-
-  // 🔥 NUEVO — HP DeskJet Ink Advantage 3635
-  "HP DeskJet Ink Advantage 3635": {
-    modelos: ["HP DeskJet Ink Advantage 3635"],
-    toner: "HP 664 (F6U19AL)",
-    tipo: "Color"
-  },
-  "HP LaserJet M111a": {
-    modelos: ["HP LaserJet M111a"],
-    toner: "HP 150A (W1500A)",
-    tipo: "Blanco y negro"
-  }
-};
+  const modelosYToners = {
+    "HP LaserJet Pro MFP M135w": {
+      modelos: ["HP LaserJet Pro MFP M135w"],
+      toner: "HP 105A (W1105A)",
+      tipo: "Blanco y negro"
+    },
+    "HP LaserJet P1102w": {
+      modelos: ["HP LaserJet P1102w"],
+      toner: "HP 85A (CE285A)",
+      tipo: "Blanco y negro"
+    },
+    "HP LaserJet M111w": {
+      modelos: ["HP LaserJet M111w"],
+      toner: "HP 150A (W1500A)",
+      tipo: "Blanco y negro"
+    },
+    "HP LaserJet Pro M107w": {
+      modelos: ["HP LaserJet Pro M107w"],
+      toner: "HP 105A (W1105A)",
+      tipo: "Blanco y negro"
+    },
+    "HP LaserJet Pro MFP M201": {
+      modelos: ["HP LaserJet Pro MFP M201", "HP LaserJet Pro M201"],
+      toner: "HP 83A (CF283A)",
+      tipo: "Blanco y negro"
+    },
+    "HP DESKJET INK ADVANTAGE 3775": {
+      modelos: ["HP DESKJET INK ADVANTAGE 3775"],
+      toner: "HP 664 (F6U19AL)",
+      tipo: "Color"
+    },
+    "HP LaserJet Pro M203": {
+      modelos: ["HP LaserJet Pro M203"],
+      toner: "HP 30A (CF230A)",
+      tipo: "Blanco y negro"
+    },
+    "HP LaserJet Pl 102w": {
+      modelos: ["HP LaserJet P1102w", "HP LaserJet PL 102w"],
+      toner: "HP 85A (CE285A)",
+      tipo: "Blanco y negro"
+    },
+    "HP DESKJET 2130": {
+      modelos: ["HP DESKJET 2130"],
+      toner: "HP 664 (F6U19AL)",
+      tipo: "Color"
+    },
+    "HP DESKJET 2700": {
+      modelos: ["HP DESKJET 2700"],
+      toner: "HP 667",
+      tipo: "Color"
+    },
+    "HP Deskjet Ink Advantage 2874": {
+      modelos: ["HP Deskjet Ink Advantage 2874"],
+      toner: "HP 667",
+      tipo: "Color"
+    },
+    "HP LaserJet Pro M127FN": {
+      modelos: ["HP LaserJet Pro M127FN"],
+      toner: "HP 83A(CF283A)",
+      tipo: "Blanco y negro"
+    },
+    "HP Deskjet Ink Advantage 2375": {
+      modelos: ["HP Deskjet Ink Advantage 2375"],
+      toner: "HP 667",
+      tipo: "Color"
+    },
+    "HP LaserJet Pro M203dw": {
+      modelos: ["HP LaserJet Pro M203dw"],
+      toner: "HP 30A (CF230A)",
+      tipo: "Blanco y negro"
+    },
+    "HP DeskJet 2775": {
+      modelos: ["HP DeskJet 2775"],
+      toner: "HP 667",
+      tipo: "Color"
+    },
+    "HP LaserJet Pro M102w": {
+      modelos: ["HP LaserJet Pro M102w"],
+      toner: "HP 17A (CF217A)",
+      tipo: "Blanco y negro"
+    },
+    "HP LaserJet Pro M201dw": {
+      modelos: ["HP LaserJet Pro M201dw"],
+      toner: "HP 83A (CF283A)",
+      tipo: "Blanco y negro"
+    },
+    "HP DeskJet Ink Advantage 3635": {
+      modelos: ["HP DeskJet Ink Advantage 3635"],
+      toner: "HP 664 (F6U19AL)",
+      tipo: "Color"
+    },
+    "HP LaserJet M111a": {
+      modelos: ["HP LaserJet M111a"],
+      toner: "HP 150A (W1500A)",
+      tipo: "Blanco y negro"
+    }
+  };
 
   // 🔥 FUNCIÓN PARA OBTENER INFORMACIÓN DEL TONER SEGÚN EL MODELO
   const getTonerInfo = (modeloImpresora) => {
@@ -200,7 +194,7 @@ const modelosYToners = {
     };
   };
 
-  // Objeto que mapea cada sucursal con sus modelos de impresora (actualizado con los modelos correctos)
+  // Objeto que mapea cada sucursal con sus modelos de impresora
   const modelosPorSucursal = {
     "CENT": [
       "HP LaserJet M111a",
@@ -245,11 +239,6 @@ const modelosYToners = {
     ]
   };
 
-  const tiposToner = [
-    "Blanco y negro",
-    "Color"
-  ];
-
   // 🔥 ACTUALIZAR TONER AUTOMÁTICAMENTE CUANDO CAMBIA EL MODELO
   useEffect(() => {
     if (formData.modelo_impresora) {
@@ -274,7 +263,7 @@ const modelosYToners = {
     }
     
     setSortConfig({ key, direction });
-    setCurrentPage(1); // Volver a la primera página al ordenar
+    setCurrentPage(1);
   };
 
   const getSortIcon = (key) => {
@@ -293,32 +282,27 @@ const modelosYToners = {
       let aValue = a[sortConfig.key];
       let bValue = b[sortConfig.key];
 
-      // Manejo especial para fechas
       if (sortConfig.key === 'fecha_pedido') {
         aValue = new Date(aValue);
         bValue = new Date(bValue);
       }
 
-      // Manejo especial para cantidades numéricas
       if (sortConfig.key === 'cantidad') {
         aValue = parseInt(aValue);
         bValue = parseInt(bValue);
       }
 
-      // Manejo especial para estado
       if (sortConfig.key === 'estado') {
         const estadoOrden = { 'pendiente': 1, 'aprobado': 2, 'rechazado': 3 };
         aValue = estadoOrden[aValue] || 0;
         bValue = estadoOrden[bValue] || 0;
       }
 
-      // Convertir a string para comparación case-insensitive si no es número
       if (typeof aValue !== 'number') {
         aValue = String(aValue || '').toLowerCase();
         bValue = String(bValue || '').toLowerCase();
       }
 
-      // Comparar
       if (aValue < bValue) {
         return sortConfig.direction === 'ascending' ? -1 : 1;
       }
@@ -346,7 +330,7 @@ const modelosYToners = {
   // 🔥 FUNCIÓN PARA CAMBIAR ITEMS POR PÁGINA
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(Number(e.target.value));
-    setCurrentPage(1); // Volver a la primera página
+    setCurrentPage(1);
   };
 
   // 🔥 GENERAR BOTONES DE PAGINACIÓN
@@ -357,12 +341,10 @@ const modelosYToners = {
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
-    // Ajustar startPage si estamos cerca del final
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
 
-    // Botón anterior
     buttons.push(
       <button
         key="prev"
@@ -374,7 +356,6 @@ const modelosYToners = {
       </button>
     );
 
-    // Primera página y puntos suspensivos si es necesario
     if (startPage > 1) {
       buttons.push(
         <button
@@ -394,7 +375,6 @@ const modelosYToners = {
       }
     }
 
-    // Páginas visibles
     for (let i = startPage; i <= endPage; i++) {
       buttons.push(
         <button
@@ -411,7 +391,6 @@ const modelosYToners = {
       );
     }
 
-    // Última página y puntos suspensivos si es necesario
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         buttons.push(
@@ -431,7 +410,6 @@ const modelosYToners = {
       );
     }
 
-    // Botón siguiente
     buttons.push(
       <button
         key="next"
@@ -448,7 +426,6 @@ const modelosYToners = {
 
   // 🔥 FUNCIÓN PARA ENVIAR CORREO DE SOLICITUD DE CARGA
   const solicitarCargaPedidos = async () => {
-    // Preguntar confirmación al usuario
     const result = await Swal.fire({
       title: '¿Enviar correo de solicitud?',
       text: 'Se enviará un correo solicitando la carga de pedidos',
@@ -465,7 +442,6 @@ const modelosYToners = {
     if (!result.isConfirmed) return;
 
     try {
-      // Mostrar indicador de carga
       Swal.fire({
         title: 'Enviando correo...',
         text: 'Por favor espera',
@@ -477,7 +453,6 @@ const modelosYToners = {
         color: "#fff"
       });
 
-      // Enviar solicitud al backend
       const response = await fetch(`${urls}/api/solicitar-carga`, {
         method: 'POST',
         headers: {
@@ -615,9 +590,10 @@ const modelosYToners = {
     }
 
     try {
-      // 🔥 INCLUIR EL MODELO DE TONER EN EL ENVÍO
+      // 🔥 INCLUIR EL SOLICITANTE DESDE EL CONTEXTO
       const datosEnvio = {
         ...formData,
+        solicitante: user1?.nombrepersona || 'Sin especificar',
         toner_modelo: formData.toner_modelo || getTonerInfo(formData.modelo_impresora).toner
       };
 
@@ -640,10 +616,8 @@ const modelosYToners = {
           confirmButtonText: 'Aceptar'
         });
         
-        // Reset form y volver a la lista
         setFormData({
-          solicitante: "",
-          sucursal: "", 
+          sucursal: "",
           modelo_impresora: "",
           tipo_toner: "",
           cantidad: "",
@@ -651,7 +625,7 @@ const modelosYToners = {
         });
         setCurrentStep(0);
         setShowForm(false);
-        fetchPedidos(); // Actualizar la lista
+        fetchPedidos();
       } else {
         const errorData = await response.json();
         await Swal.fire({
@@ -698,7 +672,7 @@ const modelosYToners = {
           confirmButtonColor: '#10B981',
           confirmButtonText: 'Aceptar'
         });
-        fetchPedidos(); // Actualizar la lista
+        fetchPedidos();
       } else {
         throw new Error('Error al procesar el pedido');
       }
@@ -736,7 +710,7 @@ const modelosYToners = {
           confirmButtonColor: '#10B981',
           confirmButtonText: 'Aceptar'
         });
-        fetchPedidos(); // Actualizar la lista
+        fetchPedidos();
       } else {
         throw new Error('Error al actualizar el pedido');
       }
@@ -785,7 +759,7 @@ const modelosYToners = {
             confirmButtonColor: '#10B981',
             confirmButtonText: 'Aceptar'
           });
-          fetchPedidos(); // Actualizar la lista
+          fetchPedidos();
         } else {
           throw new Error('Error al eliminar el pedido');
         }
@@ -821,7 +795,6 @@ const modelosYToners = {
       return;
     }
 
-    // 🔥 INCLUIR EL MODELO DE TONER EN EL EXCEL
     const datosExcel = pedidosPendientes.map(pedido => ({
       'SOLICITANTE': pedido.solicitante.toUpperCase(),
       'SUCURSAL': pedido.sucursal,
@@ -837,21 +810,15 @@ const modelosYToners = {
       'ESTADO': 'PENDIENTE'
     }));
 
-    // Crear workbook
     const wb = XLSX.utils.book_new();
-    
-    // Crear worksheet con datos
     const ws = XLSX.utils.json_to_sheet(datosExcel);
     
-    // Estilos y formato para el Excel
     const range = XLSX.utils.decode_range(ws['!ref']);
     
-    // Aplicar estilos a los headers
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
       if (!ws[cellAddress]) continue;
       
-      // Formato para headers
       ws[cellAddress].s = {
         font: { bold: true, color: { rgb: "FFFFFF" } },
         fill: { fgColor: { rgb: "4472C4" } },
@@ -865,7 +832,6 @@ const modelosYToners = {
       };
     }
     
-    // Aplicar estilos a las celdas de datos
     for (let R = range.s.r + 1; R <= range.e.r; ++R) {
       for (let C = range.s.c; C <= range.e.c; ++C) {
         const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
@@ -881,30 +847,26 @@ const modelosYToners = {
           alignment: { vertical: "center" }
         };
         
-        // Formato especial para columna de cantidad
-        if (C === 5) { // Columna de cantidad (ahora en posición 5 por la nueva columna)
+        if (C === 5) {
           ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
         }
       }
     }
     
-    // 🔥 AJUSTAR ANCHOS DE COLUMNAS CON LA NUEVA COLUMNA
     const colWidths = [
-      { wch: 20 }, // Solicitante
-      { wch: 10 }, // Sucursal
-      { wch: 35 }, // Modelo Impresora
-      { wch: 25 }, // Modelo Toner 🔥 NUEVA COLUMNA
-      { wch: 15 }, // Tipo Toner
-      { wch: 10 }, // Cantidad
-      { wch: 15 }, // Fecha
-      { wch: 12 }  // Estado
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 35 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 15 },
+      { wch: 12 }
     ];
     ws['!cols'] = colWidths;
 
-    // Agregar worksheet al workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Pedidos Pendientes');
 
-    // Generar archivo y descargar
     const fecha = new Date().toISOString().split('T')[0];
     XLSX.writeFile(wb, `pedidos_pendientes_${fecha}.xlsx`);
 
@@ -921,7 +883,6 @@ const modelosYToners = {
 
   const resetForm = () => {
     setFormData({
-      solicitante: "",
       sucursal: "",
       modelo_impresora: "", 
       tipo_toner: "",
@@ -933,7 +894,6 @@ const modelosYToners = {
 
   const cancelForm = () => {
     setFormData({
-      solicitante: "",
       sucursal: "",
       modelo_impresora: "", 
       tipo_toner: "",
@@ -966,28 +926,7 @@ const modelosYToners = {
     const tonerInfo = formData.modelo_impresora ? getTonerInfo(formData.modelo_impresora) : null;
     
     switch(currentStep) {
-      case 0: // Solicitante
-        return (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-center mb-6">Solicitante</h2>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Nombre y Apellido
-              </label>
-              <input
-                type="text"
-                name="solicitante"
-                value={formData.solicitante}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ingresa tu nombre completo"
-                required
-              />
-            </div>
-          </div>
-        );
-
-      case 1: // Sucursal
+      case 0: // Sucursal
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-center mb-6">Sucursal</h2>
@@ -1010,7 +949,7 @@ const modelosYToners = {
           </div>
         );
 
-      case 2: // Modelo
+      case 1: // Modelo
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-center mb-6">Modelo de Impresora</h2>
@@ -1039,8 +978,6 @@ const modelosYToners = {
                       <span className="text-blue-300 font-semibold">Toner asignado:</span>
                       <span className="text-white">{tonerInfo.toner}</span>
                     </div>
-                    <div className="flex items-center space-x-2 text-sm mt-1">
-                    </div>
                   </div>
                 )}
               </div>
@@ -1048,7 +985,7 @@ const modelosYToners = {
           </div>
         );
 
-      case 3: // Tipo de Toner
+      case 2: // Tipo de Toner
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-center mb-6">Confirmar Tipo de Toner</h2>
@@ -1111,7 +1048,7 @@ const modelosYToners = {
           </div>
         );
 
-      case 4: // Cantidad
+      case 3: // Cantidad
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-center mb-6">Cantidad</h2>
@@ -1148,7 +1085,7 @@ const modelosYToners = {
     }
   };
 
-  // 🔥 VISTA COMPACTA PERO CON FUENTES MÁS GRANDES
+  // 🔥 VISTA COMPACTA PERO CON FUENTES MÁS GRANDES - ¡AHORA DEFINIDA!
   const renderPedidosList = () => (
     <div className="w-full h-full bg-gray-800 rounded-lg shadow-lg p-4 flex flex-col">
       <div className="flex justify-between items-center mb-4">
@@ -1162,15 +1099,16 @@ const modelosYToners = {
         </button>
         
         <div className="flex space-x-2">
-          {isAdmin && <button
-            onClick={solicitarCargaPedidos}
-            className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-            title="Solicitar carga de pedidos por correo"
-          >
-            <IoIosMail className="text-lg" />
-            <span className="text-sm">Solicitar Carga</span>
-          </button>
-          }
+          {isAdmin && (
+            <button
+              onClick={solicitarCargaPedidos}
+              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              title="Solicitar carga de pedidos por correo"
+            >
+              <IoIosMail className="text-lg" />
+              <span className="text-sm">Solicitar Carga</span>
+            </button>
+          )}
           
           <button
             onClick={descargarExcel}
@@ -1339,7 +1277,6 @@ const modelosYToners = {
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap">
                         <div className="flex space-x-2">
-                          {/* 🔥 BOTONES CON ICONOS MÁS GRANDES */}
                           {isAdmin && pedido.estado === 'pendiente' && (
                             <button
                               onClick={() => procesarPedido(pedido.id)}
@@ -1407,9 +1344,17 @@ const modelosYToners = {
     </div>
   );
 
-  // Vista del formulario de pedidos (sin cambios)
+  // Vista del formulario de pedidos
   const renderForm = () => (
     <div className="max-w-md mx-auto bg-gray-800 rounded-lg shadow-lg p-6">
+      {/* 🔥 INDICADOR DEL SOLICITANTE ACTUAL */}
+      <div className="mb-4 p-3 bg-blue-900 rounded-lg">
+        <p className="text-white text-sm">
+          <span className="text-blue-300 font-semibold">Solicitante:</span>{' '}
+          {user1?.nombrepersona || 'Usuario no identificado'}
+        </p>
+      </div>
+
       {/* Progress Bar */}
       <div className="flex justify-between mb-6">
         {steps.map((step, index) => (
