@@ -338,6 +338,7 @@ function App() {
     }
 
     const textoParaCopiar = `
+Ip: ${impresora.ip}
 Sucursal: ${pedidoData.nombre}
 Modelo: ${pedidoData.modelo}
 Número de Serie: ${pedidoData.numero_serie}
@@ -345,7 +346,6 @@ Contador: ${pedidoData.contador_total}
 Dirección: ${pedidoData.direccion}
 Teléfono: ${pedidoData.telefono}
 Correo: ${pedidoData.correo}
-Último Pedido: ${fechaFormateada}
   `.trim();
 
     const confirmacion = await Swal.fire({
