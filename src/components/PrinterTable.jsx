@@ -612,23 +612,7 @@ export default function PrinterTable({
                     />
                     <div className="action-buttons">
                       {/* 🔧 BOTÓN DE REINICIO CON ESTILOS INLINE */}
-                      <div className="tooltip-container">
-                        <button
-                          style={styles.rebootBtn}
-                          onClick={() => showRebootOptions(impresora)}
-                          disabled={impresora.estado === "desconectada" || isRebooting}
-                        >
-                          {isRebooting ? (
-                            <div style={styles.spinnerSmall}></div>
-                          ) : (
-                            <FaPowerOff />
-                          )}
-                        </button>
-                        <span className="tooltip">
-                          {isRebooting ? "Reiniciando..." : "Reiniciar impresora"}
-                        </span>
-                      </div>
-                      
+    
                       {/* 🖨️ BOTONES EXISTENTES (mantienen sus estilos CSS) */}
                    
        
