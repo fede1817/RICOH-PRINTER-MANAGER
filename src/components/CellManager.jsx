@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react'
 import { FiNavigation } from 'react-icons/fi'
+import { 
+  FaChevronLeft, 
+  FaChevronRight, 
+  FaAngleDoubleLeft, 
+  FaAngleDoubleRight,
+  FaEllipsisH 
+} from 'react-icons/fa'
 import SearchControls from './SearchControls'
 import Stats from './Stats'
 import DeviceGrid from './DeviceGrid'
@@ -8,17 +15,226 @@ import Error from './Error'
 import NoResults from './NoResults'
 import { useAuth } from "../context/AuthContext";
 
+// Nuevo componente para la paginación con FontAwesome
+function Pagination({ currentPage, totalPages, onPageChange, itemsPerPage, onItemsPerPageChange, itemsPerPageOptions }) {
+  const styles = {
+    container: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: '24px',
+      padding: '16px',
+      backgroundColor: '#1e293b',
+      borderRadius: '12px',
+      flexWrap: 'wrap',
+      gap: '16px'
+    },
+    itemsPerPage: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px'
+    },
+    itemsPerPageLabel: {
+      color: '#cbd5e1',
+      fontSize: '14px'
+    },
+    itemsPerPageSelect: {
+      backgroundColor: '#0f172a',
+      border: '1px solid #475569',
+      borderRadius: '6px',
+      padding: '8px 12px',
+      color: '#f1f5f9',
+      fontSize: '14px',
+      cursor: 'pointer',
+      outline: 'none'
+    },
+    pageInfo: {
+      color: '#cbd5e1',
+      fontSize: '14px'
+    },
+    pageButtons: {
+      display: 'flex',
+      gap: '8px',
+      alignItems: 'center'
+    },
+    pageButton: {
+      backgroundColor: '#0f172a',
+      border: '1px solid #475569',
+      borderRadius: '6px',
+      padding: '8px 12px',
+      color: '#f1f5f9',
+      fontSize: '14px',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      minWidth: '36px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    pageButtonActive: {
+      backgroundColor: '#3b82f6',
+      borderColor: '#3b82f6',
+      color: 'white'
+    },
+    pageButtonDisabled: {
+      opacity: 0.5,
+      cursor: 'not-allowed',
+      '&:hover': {
+        backgroundColor: '#0f172a',
+        transform: 'none'
+      }
+    },
+    ellipsis: {
+      color: '#cbd5e1',
+      padding: '8px',
+      display: 'flex',
+      alignItems: 'center'
+    }
+  }
+
+  const handleItemsPerPageChange = (e) => {
+    onItemsPerPageChange(Number(e.target.value))
+  }
+
+  const getPageNumbers = () => {
+    const pages = []
+    const maxVisiblePages = 5
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i)
+        pages.push('...')
+        pages.push(totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1)
+        pages.push('...')
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i)
+      } else {
+        pages.push(1)
+        pages.push('...')
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i)
+        pages.push('...')
+        pages.push(totalPages)
+      }
+    }
+    
+    return pages
+  }
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.itemsPerPage}>
+        <span style={styles.itemsPerPageLabel}>Mostrar:</span>
+        <select 
+          value={itemsPerPage} 
+          onChange={handleItemsPerPageChange}
+          style={styles.itemsPerPageSelect}
+        >
+          {itemsPerPageOptions.map(option => (
+            <option key={option} value={option}>{option} por página</option>
+          ))}
+        </select>
+      </div>
+
+      <div style={styles.pageInfo}>
+        Página {currentPage} de {totalPages}
+      </div>
+
+      <div style={styles.pageButtons}>
+        <button
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          style={{
+            ...styles.pageButton,
+            ...(currentPage === 1 ? styles.pageButtonDisabled : {})
+          }}
+          title="Primera página"
+        >
+          <FaAngleDoubleLeft />
+        </button>
+        
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          style={{
+            ...styles.pageButton,
+            ...(currentPage === 1 ? styles.pageButtonDisabled : {})
+          }}
+          title="Página anterior"
+        >
+          <FaChevronLeft />
+        </button>
+
+        {getPageNumbers().map((page, index) => (
+          page === '...' ? (
+            <span key={`dots-${index}`} style={styles.ellipsis}>
+              <FaEllipsisH />
+            </span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => onPageChange(page)}
+              style={{
+                ...styles.pageButton,
+                ...(currentPage === page ? styles.pageButtonActive : {})
+              }}
+              title={`Página ${page}`}
+            >
+              {page}
+            </button>
+          )
+        ))}
+
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          style={{
+            ...styles.pageButton,
+            ...(currentPage === totalPages ? styles.pageButtonDisabled : {})
+          }}
+          title="Página siguiente"
+        >
+          <FaChevronRight />
+        </button>
+
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          style={{
+            ...styles.pageButton,
+            ...(currentPage === totalPages ? styles.pageButtonDisabled : {})
+          }}
+          title="Última página"
+        >
+          <FaAngleDoubleRight />
+        </button>
+      </div>
+    </div>
+  )
+}
 
 function CellManager() {
   const [trackingData, setTrackingData] = useState([])
   const [filteredData, setFilteredData] = useState([])
+  const [paginatedData, setPaginatedData] = useState([]) // Estado para datos paginados
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSucursal, setSelectedSucursal] = useState('')
   const [selectedPowerStatus, setSelectedPowerStatus] = useState('')
-  const [selectedActiveStatus, setSelectedActiveStatus] = useState('todos') // Nuevo estado para filtrar por activo/inactivo
-const { authCredentials } = useAuth();
+  const [selectedActiveStatus, setSelectedActiveStatus] = useState('todos')
+  
+  // Nuevos estados para paginación - por defecto 10
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10) // Cambiado a 10 por defecto
+  const itemsPerPageOptions = [10, 50, 100] // Opciones disponibles
+  
+  const { authCredentials } = useAuth();
+
   const fetchTrackingData = async () => {
     try {
       setLoading(true)
@@ -40,6 +256,7 @@ const { authCredentials } = useAuth();
       const devicesArray = Array.isArray(data) ? data : [data]
       setTrackingData(devicesArray)
       setFilteredData(devicesArray)
+      setCurrentPage(1) // Resetear a primera página cuando se cargan nuevos datos
       
     } catch (error) {
       console.error("❌ Error:", error)
@@ -210,7 +427,15 @@ const { authCredentials } = useAuth();
     }
     
     setFilteredData(filtered)
+    setCurrentPage(1) // Resetear a primera página cuando cambian los filtros
   }, [searchTerm, selectedSucursal, selectedPowerStatus, selectedActiveStatus, trackingData])
+
+  // Efecto para paginar los datos filtrados
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    setPaginatedData(filteredData.slice(startIndex, endIndex))
+  }, [filteredData, currentPage, itemsPerPage])
 
   // Obtener lista única de sucursales
   const sucursales = [...new Set(trackingData
@@ -223,6 +448,21 @@ const { authCredentials } = useAuth();
     const interval = setInterval(fetchTrackingData, 24 * 60 * 60 * 1000) // 24 horas
     return () => clearInterval(interval)
   }, [])
+
+  // Calcular total de páginas
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage)
+
+  // Manejadores para paginación
+  const handlePageChange = (page) => {
+    setCurrentPage(page)
+    // Scroll suave hacia arriba cuando cambia la página
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage)
+    setCurrentPage(1) // Resetear a primera página cuando cambia el número de items por página
+  }
 
   // Estilos CSS en objeto - MODO OSCURO
   const styles = {
@@ -288,6 +528,12 @@ const { authCredentials } = useAuth();
         borderColor: '#3b82f6',
         boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.3)'
       }
+    },
+    resultsInfo: {
+      textAlign: 'center',
+      marginTop: '16px',
+      color: '#94a3b8',
+      fontSize: '14px'
     }
   }
 
@@ -333,6 +579,12 @@ const { authCredentials } = useAuth();
           filteredData={filteredData}
           isPhoneOn={isPhoneOn}
         />
+
+        {filteredData.length > 0 && (
+          <div style={styles.resultsInfo}>
+            Mostrando {paginatedData.length} de {filteredData.length} dispositivos
+          </div>
+        )}
       </div>
 
       {loading && filteredData.length === 0 && <Loading />}
@@ -345,13 +597,26 @@ const { authCredentials } = useAuth();
       )}
 
       {filteredData.length > 0 ? (
-        <DeviceGrid 
-          filteredData={filteredData}
-          isPhoneOn={isPhoneOn}
-          getTimeAgo={getTimeAgo}
-          getTimeColor={getTimeColor}
-          getPowerConfidence={getPowerConfidence}
-        />
+        <>
+          <DeviceGrid 
+            filteredData={paginatedData}
+            isPhoneOn={isPhoneOn}
+            getTimeAgo={getTimeAgo}
+            getTimeColor={getTimeColor}
+            getPowerConfidence={getPowerConfidence}
+          />
+          
+          {filteredData.length > itemsPerPage && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              itemsPerPageOptions={itemsPerPageOptions}
+            />
+          )}
+        </>
       ) : (
         !loading && !error && <NoResults />
       )}
