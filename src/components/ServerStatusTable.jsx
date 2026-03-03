@@ -46,7 +46,6 @@ const ServerStatusTable = ({urls}) => {
   const [editingServer, setEditingServer] = useState(null);
   const [showPingModal, setShowPingModal] = useState(false); // 🔧 ESTADO PARA MODAL PING
 
-
   // 🔧 FUNCIÓN PARA ABRIR MODAL PING
   const openPingModal = () => {
     setShowPingModal(true);
@@ -163,7 +162,8 @@ const ServerStatusTable = ({urls}) => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch(`${urls}/api/servidores`);
+      // 👇 CAMBIO 1: Usar urls directamente (ya incluye /api)
+      const response = await fetch(`${urls}/servidores`);
 
       if (!response.ok) {
         throw new Error("Error al cargar los servidores");
@@ -188,7 +188,8 @@ const ServerStatusTable = ({urls}) => {
   // Cargar estadísticas
   const loadStats = async () => {
     try {
-      const response = await fetch(`${urls}/api/servidores-estadisticas`);
+      // 👇 CAMBIO 2: Ruta de estadísticas
+      const response = await fetch(`${urls}/servidores/estadisticas/resumen`);
       if (response.ok) {
         const data = await response.json();
         setStats(data);
@@ -217,8 +218,9 @@ const ServerStatusTable = ({urls}) => {
         color: "#f1f5f9",
       });
 
+      // 👇 CAMBIO 3: Ruta para verificar un servidor
       const response = await fetch(
-        `${urls}/api/servidores/${serverId}/verificar`,
+        `${urls}/servidores/${serverId}/verificar`,
         { method: "POST" }
       );
 
@@ -284,8 +286,9 @@ const ServerStatusTable = ({urls}) => {
         color: "#f1f5f9",
       });
 
+      // 👇 CAMBIO 4: Ruta para verificar todos
       const response = await fetch(
-        `${urls}/api/servidores/verificar-todos`,
+        `${urls}/servidores/verificar-todos`,
         {
           method: "POST",
         }
@@ -333,7 +336,8 @@ const ServerStatusTable = ({urls}) => {
   // Agregar nuevo servidor
   const handleAddServer = async (formData) => {
     try {
-      const response = await fetch(`${urls}/api/servidores`, {
+      // 👇 CAMBIO 5: Ruta para agregar servidor
+      const response = await fetch(`${urls}/servidores`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -359,8 +363,9 @@ const ServerStatusTable = ({urls}) => {
   // Editar servidor
   const handleEditServer = async (formData) => {
     try {
+      // 👇 CAMBIO 6: Ruta para editar servidor
       const response = await fetch(
-        `${urls}/api/servidores/${editingServer.id}`,
+        `${urls}/servidores/${editingServer.id}`,
         {
           method: "PUT",
           headers: {
@@ -412,7 +417,8 @@ const ServerStatusTable = ({urls}) => {
           color: "#f1f5f9",
         });
 
-        const response = await fetch(`${urls}/api/servidores/${serverId}`, {
+        // 👇 CAMBIO 7: Ruta para eliminar servidor
+        const response = await fetch(`${urls}/servidores/${serverId}`, {
           method: "DELETE",
         });
 
@@ -518,6 +524,7 @@ const ServerStatusTable = ({urls}) => {
         onSubmit={handleAddServer}
         title="Agregar Nuevo Servidor"
         isEditing={false}
+        urls={urls} // 👈 Pasar urls al modal si lo necesita
       />
 
       <ServerModal
@@ -527,6 +534,7 @@ const ServerStatusTable = ({urls}) => {
         title="Editar Servidor"
         serverData={editingServer}
         isEditing={true}
+        urls={urls} // 👈 Pasar urls al modal si lo necesita
       />
 
       {/* 🔧 MODAL PING */}
@@ -540,7 +548,7 @@ const ServerStatusTable = ({urls}) => {
               </button>
             </div>
             <div className="modal-body">
-              <PingApp />
+              <PingApp urls={urls} /> {/* 👈 Pasar urls a PingApp */}
             </div>
           </div>
         </div>
@@ -793,7 +801,6 @@ const ServerStatusTable = ({urls}) => {
                           e.stopPropagation();
                           verifyServer(server.id);
                         }}
-
                         disabled={verifyingServers.has(server.id)}
                       >
                         {verifyingServers.has(server.id) ? (
@@ -805,14 +812,12 @@ const ServerStatusTable = ({urls}) => {
                       <button
                         className="server-monitor-action-btn server-monitor-action-edit"
                         onClick={(e) => openEditModal(server, e)}
-                       
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button
                         className="server-monitor-action-btn server-monitor-action-delete"
                         onClick={(e) => deleteServer(server.id, server.ip, e)}
-                        
                       >
                         <FontAwesomeIcon icon={faTrash} />
                       </button>

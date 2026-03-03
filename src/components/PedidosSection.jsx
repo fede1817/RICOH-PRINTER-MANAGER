@@ -453,7 +453,7 @@ const PedidosSection = ({urls}) => {
         color: "#fff"
       });
 
-      const response = await fetch(`${urls}/api/solicitar-carga`, {
+      const response = await fetch(`${urls}/solicitar-carga`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -512,7 +512,7 @@ const PedidosSection = ({urls}) => {
   const fetchPedidos = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${urls}/api/pedidos`);
+      const response = await fetch(`${urls}/pedidos`);
       if (response.ok) {
         const data = await response.json();
         setPedidos(data.pedidos || []);
@@ -597,7 +597,7 @@ const PedidosSection = ({urls}) => {
         toner_modelo: formData.toner_modelo || getTonerInfo(formData.modelo_impresora).toner
       };
 
-      const response = await fetch(`${urls}/api/pedidos`, {
+      const response = await fetch(`${urls}/pedidos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -655,7 +655,7 @@ const PedidosSection = ({urls}) => {
   // Función para procesar pedido
   const procesarPedido = async (pedidoId) => {
     try {
-      const response = await fetch(`${urls}/api/pedidos/${pedidoId}/procesar`, {
+      const response = await fetch(`${urls}/pedidos/${pedidoId}/procesar`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -693,7 +693,7 @@ const PedidosSection = ({urls}) => {
   // Función para volver a poner pendiente
   const volverAPendiente = async (pedidoId) => {
     try {
-      const response = await fetch(`${urls}/api/pedidos/${pedidoId}/pendiente`, {
+      const response = await fetch(`${urls}/pedidos/${pedidoId}/pendiente`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -745,7 +745,7 @@ const PedidosSection = ({urls}) => {
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch(`${urls}/api/pedidos/${pedidoId}`, {
+        const response = await fetch(`${urls}/pedidos/${pedidoId}`, {
           method: 'DELETE',
         });
 

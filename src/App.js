@@ -24,6 +24,7 @@ import Censo from "./components/Censo";
 import CellManager from "./components/CellManager";
 import { FiNavigation } from "react-icons/fi";
 import { useAuth } from "./context/AuthContext";
+
 function App() {
   const [impresoras, setImpresoras] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -53,7 +54,9 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState(null);
   const { user1 } = useAuth();
-  const urls = "http://192.168.8.166:3001";
+
+  // 👇 SOLO CAMBIO 1: La URL base ahora apunta al backend refactorizado
+  const urls = "http://192.168.8.166:3001/api";
 
   // Verificar autenticación al cargar
   useEffect(() => {
@@ -113,6 +116,7 @@ function App() {
       });
     });
   };
+
   // ✅ Función para cargar impresoras
   const fetchImpresoras = (showMessage = false) => {
     if (!isAdmin) return; // Solo cargar si es admin
@@ -121,7 +125,8 @@ function App() {
       setShowLoadingMessage(true);
     }
 
-    fetch(urls + "/api/toners")
+    // 👇 CAMBIO 2: Antes era urls + "/", ahora es urls + "/impresoras"
+    fetch(urls + "/impresoras")
       .then((res) => res.json())
       .then((data) => setImpresoras(data.impresoras || []))
       .catch((err) => console.error("Error al obtener datos:", err))
@@ -144,7 +149,6 @@ function App() {
   }, [isAuthenticated, isAdmin]);
 
   // Función de login
-  // En App.js, modifica la función handleLogin
   const handleLogin = (userData, adminStatus, seccionInicial = null) => {
     setUser(userData);
     setIsAuthenticated(true);
@@ -210,9 +214,10 @@ function App() {
     if (!result.isConfirmed) return;
 
     const method = editingId ? "PUT" : "POST";
+    // 👇 CAMBIO 3: Rutas para crear/editar impresora
     const url = editingId
-      ? `${urls}/api/impresoras/${editingId}`
-      : `${urls}/api/impresoras`;
+      ? `${urls}/impresoras/${editingId}`
+      : `${urls}/impresoras`;
 
     try {
       const response = await fetch(url, {
@@ -274,7 +279,8 @@ function App() {
 
     if (result.isConfirmed) {
       try {
-        await fetch(`${urls}/api/impresoras/${id}`, {
+        // 👇 CAMBIO 4: Ruta para eliminar impresora
+        await fetch(`${urls}/impresoras/${id}`, {
           method: "DELETE",
         });
 
@@ -391,7 +397,8 @@ Correo: ${pedidoData.correo}
           cantidad: 1,
         };
 
-        const response = await fetch(urls + "/api/pedidos", {
+        // 👇 CAMBIO 5: Ruta para crear pedido
+        const response = await fetch(urls + "/pedidos", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(nuevoPedido),
@@ -401,7 +408,8 @@ Correo: ${pedidoData.correo}
           throw new Error("Error al guardar el pedido en el backend");
         }
 
-        const response1 = await fetch(urls + "/api/pedido", {
+        // 👇 CAMBIO 6: Ruta para actualizar reserva de tóner
+        const response1 = await fetch(urls + "/pedidos", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ impresora_id: impresora.id }),
@@ -660,6 +668,7 @@ Correo: ${pedidoData.correo}
 
             {tablaActiva === "servidores" && isAdmin && (
               <div id="server-status">
+                {/* 👇 IMPORTANTE: ServerStatusTable debe usar urls correctamente */}
                 <ServerStatusTable urls={urls} />
               </div>
             )}
