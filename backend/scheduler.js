@@ -15,6 +15,12 @@ setInterval(
 
         if (!resultado.error && resultado.toner !== null) {
           await actualizarTonerImpresora(impresora, resultado);
+        } else {
+          // Si falla SNMP, marcar la impresora como desconectada
+          await pool.query(
+            "UPDATE impresoras SET estado = 'desconectada', ultima_verificacion = NOW() WHERE id = $1",
+            [impresora.id]
+          );
         }
       }
 
@@ -23,8 +29,8 @@ setInterval(
       console.error("❌ Error en actualización SNMP:", error);
     }
   },
-  5 * 60 * 1000,
-); // cada 5 minutos
+  1 * 60 * 1000,
+); // cada 1 minuto
 
 // Actualización de servidores cada 5 minutos
 setInterval(
@@ -71,8 +77,8 @@ setInterval(
       console.error("❌ Error en actualización automática:", error);
     }
   },
-  5 * 60 * 1000,
-); // 5 minutos
+  1 * 60 * 1000,
+); // cada 1 minuto
 
 // Función auxiliar para actualizar tóner
 async function actualizarTonerImpresora(impresora, resultado) {
@@ -94,19 +100,23 @@ async function actualizarTonerImpresora(impresora, resultado) {
           toner_anterior = $1,
           toner_reserva = GREATEST(toner_reserva - 1, 0),
           numero_serie = $2,
-          contador_paginas = $3
+          contador_paginas = $3,
+          estado = 'conectada',
+          ultima_verificacion = NOW()
         WHERE id = $4`,
         [tonerActual, resultado.numero_serie, resultado.contador, impresora.id],
       );
       console.log(
         `🔄 Cambio de tóner detectado en ${impresora.ip}: ${tonerAnterior}% → ${tonerActual}%`,
       );
-    } else if (diferencia > 5) {
+    } else {
       await pool.query(
         `UPDATE impresoras SET
           toner_anterior = $1,
           numero_serie = $2,
-          contador_paginas = $3
+          contador_paginas = $3,
+          estado = 'conectada',
+          ultima_verificacion = NOW()
         WHERE id = $4`,
         [tonerActual, resultado.numero_serie, resultado.contador, impresora.id],
       );
@@ -116,7 +126,9 @@ async function actualizarTonerImpresora(impresora, resultado) {
       `UPDATE impresoras SET
         toner_anterior = $1,
         numero_serie = $2,
-        contador_paginas = $3
+        contador_paginas = $3,
+        estado = 'conectada',
+        ultima_verificacion = NOW()
       WHERE id = $4`,
       [tonerActual, resultado.numero_serie, resultado.contador, impresora.id],
     );
@@ -133,6 +145,6 @@ async function actualizarTonerImpresora(impresora, resultado) {
   }
 }
 
-console.log("🕐 Tareas programadas iniciadas (cada 5 minutos)");
+console.log("🕐 Tareas programadas iniciadas (cada 1 minuto)");
 
 module.exports = {}; // Exportar vacío, solo para iniciar los intervalos
