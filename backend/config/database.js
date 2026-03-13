@@ -9,4 +9,9 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
+// Fix timezone: asegurar que base de datos registre NOW() en hora local argentina
+pool.on('connect', client => {
+  client.query("SET TIMEZONE='America/Argentina/Buenos_Aires';");
+});
+
 module.exports = pool;
