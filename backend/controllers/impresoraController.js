@@ -334,6 +334,33 @@ class ImpresoraController {
     }
   }
 
+  // Obtener toners de color
+  async getColorToners(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await pool.query(
+        "SELECT ip FROM impresoras WHERE id = $1",
+        [id],
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Impresora no encontrada" });
+      }
+
+      const { ip } = result.rows[0];
+      const tonerData = await snmpService.consultarColorToners(ip);
+
+      if (tonerData.error) {
+        return res.status(500).json({ error: "No se pudieron obtener los niveles de toner a color", detalle: tonerData.mensaje });
+      }
+
+      res.json(tonerData);
+    } catch (error) {
+      console.error("❌ Error al obtener toners de color:", error);
+      res.status(500).json({ error: "Error obteniendo toners: " + error.message });
+    }
+  }
+
   // Imprimir archivo
   async print(req, res) {
     try {

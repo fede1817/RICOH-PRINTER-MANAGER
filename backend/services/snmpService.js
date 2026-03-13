@@ -35,6 +35,31 @@ class SNMPService {
     });
   }
 
+  async consultarColorToners(ip) {
+    return new Promise((resolve) => {
+      const session = snmp.createSession(ip, "public", { timeout: 3000 });
+      const oids = [OIDS.TONER_CYAN, OIDS.TONER_MAGENTA, OIDS.TONER_YELLOW];
+
+      session.get(oids, (error, varbinds) => {
+        session.close();
+
+        if (error) {
+          resolve({ error: true, mensaje: "SNMP Error: " + error.message });
+        } else {
+          const cyanRaw = varbinds[0]?.value;
+          const magentaRaw = varbinds[1]?.value;
+          const yellowRaw = varbinds[2]?.value;
+
+          const cyan = cyanRaw !== null && !isNaN(cyanRaw) ? parseInt(cyanRaw, 10) : null;
+          const magenta = magentaRaw !== null && !isNaN(magentaRaw) ? parseInt(magentaRaw, 10) : null;
+          const yellow = yellowRaw !== null && !isNaN(yellowRaw) ? parseInt(yellowRaw, 10) : null;
+
+          resolve({ cyan, magenta, yellow, error: false });
+        }
+      });
+    });
+  }
+
   async verificarSNMPEscritura(ip, communityWrite = "private") {
     return new Promise((resolve) => {
       const session = snmp.createSession(ip, communityWrite, { timeout: 3000 });

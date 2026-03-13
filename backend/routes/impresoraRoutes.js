@@ -18,6 +18,7 @@ router.get("/:id/status", impresoraController.getStatus);
 // Rutas de SNMP y reinicio
 router.post("/:id/reboot", impresoraController.reboot);
 router.get("/:id/snmp-check", impresoraController.checkSNMP);
+router.get("/:id/color-toners", impresoraController.getColorToners);
 
 // Ruta de impresión
 router.post("/:id/print", upload.single("file"), impresoraController.print);
