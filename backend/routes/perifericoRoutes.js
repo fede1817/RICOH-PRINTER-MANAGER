@@ -8,6 +8,7 @@ const router = express.Router();
 // ==========================================
 router.get("/", perifericoController.getAll);
 router.post("/", perifericoController.create);
+router.put("/:id", perifericoController.update);
 router.put("/:id/stock", perifericoController.updateStock);
 router.delete("/:id", perifericoController.delete);
 

@@ -6,6 +6,7 @@ import {
   IoIosCloseCircle,
   IoIosTrash,
   IoIosRefresh,
+  IoIosCreate,
 } from "react-icons/io";
 import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext";
@@ -39,6 +40,7 @@ const PerifericosSection = ({ urls }) => {
     stock: 0,
     sucursal: "CENT",
   });
+  const [editingId, setEditingId] = useState(null);
 
   const sucursales = ['CENT', 'CDE', 'ENC', 'CAAG', 'PJC', 'SANT', 'MIS', 'CONC'];
 
@@ -81,24 +83,56 @@ const PerifericosSection = ({ urls }) => {
     }
 
     try {
-      const response = await fetch(`${urls}/perifericos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(perifericoData)
-      });
-
-      if (response.ok) {
-        Swal.fire({
-          icon: "success", title: "Periférico Creado",
-          background: "#2c2c2c", color: "#fff"
+      if (editingId) {
+        // Modo Edición
+        const response = await fetch(`${urls}/perifericos/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(perifericoData)
         });
-        setShowPerifericoForm(false);
-        setPerifericoData({ nombre: "", tipo: "", stock: 0, sucursal: "CENT" });
-        fetchPerifericos();
+
+        if (response.ok) {
+          Swal.fire({
+            icon: "success", title: "Periférico Actualizado",
+            background: "#2c2c2c", color: "#fff"
+          });
+          setEditingId(null);
+          setShowPerifericoForm(false);
+          setPerifericoData({ nombre: "", tipo: "", stock: 0, sucursal: "CENT" });
+          fetchPerifericos();
+        }
+      } else {
+        // Modo Creación
+        const response = await fetch(`${urls}/perifericos`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(perifericoData)
+        });
+
+        if (response.ok) {
+          Swal.fire({
+            icon: "success", title: "Periférico Creado",
+            background: "#2c2c2c", color: "#fff"
+          });
+          setShowPerifericoForm(false);
+          setPerifericoData({ nombre: "", tipo: "", stock: 0, sucursal: "CENT" });
+          fetchPerifericos();
+        }
       }
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const handleEditPeriferico = (per) => {
+    setEditingId(per.id);
+    setPerifericoData({
+      nombre: per.nombre,
+      tipo: per.tipo,
+      stock: per.stock,
+      sucursal: per.sucursal
+    });
+    setShowPerifericoForm(true);
   };
 
   const updateStock = async (id, newStock) => {
@@ -499,7 +533,14 @@ const PerifericosSection = ({ urls }) => {
                               />
                             </td>
                             <td className="p-3">
-                              <div className="flex justify-center">
+                              <div className="flex justify-center gap-2">
+                                <button 
+                                  onClick={() => handleEditPeriferico(per)} 
+                                  className="p-1.5 text-blue-500 hover:bg-gray-700 rounded" 
+                                  title="Editar"
+                                >
+                                  <IoIosCreate />
+                                </button>
                                 <button onClick={() => deletePeriferico(per.id)} className="p-1.5 text-red-500 hover:bg-gray-700 rounded" title="Eliminar">
                                   <IoIosTrash />
                                 </button>
@@ -515,7 +556,9 @@ const PerifericosSection = ({ urls }) => {
             </>
            ): (
             <div className="bg-gray-800 p-6 rounded-lg max-w-2xl mx-auto border border-gray-700">
-              <h3 className="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Registrar Nuevo Periférico</h3>
+              <h3 className="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">
+                {editingId ? "Editar Periférico" : "Registrar Nuevo Periférico"}
+              </h3>
               <form onSubmit={handleCreatePeriferico} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">Nombre o Modelo</label>
@@ -560,8 +603,20 @@ const PerifericosSection = ({ urls }) => {
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                  <button type="button" onClick={() => setShowPerifericoForm(false)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Cancelar</button>
-                  <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">Guardar Registro</button>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setShowPerifericoForm(false);
+                      setEditingId(null);
+                      setPerifericoData({ nombre: "", tipo: "", stock: 0, sucursal: "CENT" });
+                    }} 
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+                    {editingId ? "Actualizar Registro" : "Guardar Registro"}
+                  </button>
                 </div>
               </form>
             </div>

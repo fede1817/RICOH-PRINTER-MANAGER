@@ -68,7 +68,33 @@ class PerifericoController {
 
       res.json({ success: true, periferico: result.rows[0] });
     } catch (error) {
-      console.error("Error al actualizar periférico:", error);
+      console.error("Error al actualizar stock del periférico:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  }
+
+  // Actualizar todos los datos de un periférico (Solo admin)
+  async update(req, res) {
+    try {
+      const { id } = req.params;
+      const { nombre, tipo, stock, sucursal } = req.body;
+
+      const query = `
+        UPDATE perifericos
+        SET nombre = $1, tipo = $2, stock = $3, sucursal = $4
+        WHERE id = $5
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [nombre, tipo, stock, sucursal, id]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Periférico no encontrado" });
+      }
+
+      res.json({ success: true, periferico: result.rows[0] });
+    } catch (error) {
+      console.error("Error al actualizar datos del periférico:", error);
       res.status(500).json({ error: "Error interno del servidor" });
     }
   }
