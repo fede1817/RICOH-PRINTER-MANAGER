@@ -17,11 +17,13 @@ import {
   IoIosLogOut,
   IoIosPerson,
   IoIosPersonAdd,
+  IoIosDesktop,
 } from "react-icons/io";
 import ServerStatusTable from "./components/ServerStatusTable";
 import PedidosSection from "./components/PedidosSection";
 import Censo from "./components/Censo";
 import CellManager from "./components/CellManager";
+import PerifericosSection from "./components/PerifericosSection";
 import { FiNavigation } from "react-icons/fi";
 import { useAuth } from "./context/AuthContext";
 
@@ -454,6 +456,11 @@ Correo: ${pedidoData.correo}
           icon: <IoIosPrint className="text-2xl" />,
         },
         {
+          id: "perifericos",
+          label: "Periféricos",
+          icon: <IoIosDesktop className="text-2xl" />,
+        },
+        {
           id: "servidores",
           label: "Servidores",
           icon: <IoIosPulse className="text-2xl" />,
@@ -479,6 +486,11 @@ Correo: ${pedidoData.correo}
           id: "pedidos",
           label: "Pedidos",
           icon: <IoIosCart className="text-2xl" />,
+        },
+        {
+          id: "perifericos",
+          label: "Periféricos",
+          icon: <IoIosDesktop className="text-2xl" />,
         },
       ];
 
@@ -594,6 +606,7 @@ Correo: ${pedidoData.correo}
                 {tablaActiva === "pedidos" && "Lista de Pedidos"}
                 {tablaActiva === "censos" && "Validador de Censos"}
                 {tablaActiva === "rastreo" && "Rastreo de Dispositivos"}
+                {tablaActiva === "perifericos" && "Gestión de Periféricos"}
               </h1>
               {!isAdmin && (
                 <p className="text-sm text-gray-400 mt-1">
@@ -684,6 +697,11 @@ Correo: ${pedidoData.correo}
           {tablaActiva === "rastreo" && isAdmin && (
             <div id="rastreo">
               <CellManager />
+            </div>
+          )}
+          {tablaActiva === "perifericos" && (
+            <div id="perifericos">
+              <PerifericosSection urls={urls} />
             </div>
           )}
         </main>

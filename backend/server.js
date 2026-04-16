@@ -5,6 +5,7 @@ require("dotenv").config();
 const impresoraRoutes = require("./routes/impresoraRoutes");
 const pedidoRoutes = require("./routes/pedidoRoutes");
 const servidorRoutes = require("./routes/servidorRoutes");
+const perifericoRoutes = require("./routes/perifericoRoutes");
 const emailRoutes = require("./routes/emailRoutes");
 const scheduler = require("./scheduler");
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler"); // 👈 IMPORTAR
@@ -21,6 +22,7 @@ app.use("/api/impresoras", impresoraRoutes);
 app.use("/api/pedidos", pedidoRoutes);
 app.use("/api/servidores", servidorRoutes);
 app.use("/api", emailRoutes);
+app.use("/api/perifericos", perifericoRoutes);
 
 // Ruta de ping simple
 app.post("/ping", async (req, res) => {
