@@ -7,6 +7,8 @@ import {
   IoIosTrash,
   IoIosRefresh,
   IoIosCreate,
+  IoIosArrowBack,
+  IoIosArrowForward,
 } from "react-icons/io";
 import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthContext";
@@ -23,6 +25,11 @@ const PerifericosSection = ({ urls }) => {
   // Estados Solicitudes
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingSolicitudes, setLoadingSolicitudes] = useState(false);
+  
+  // 🔥 ESTADOS PARA PAGINACIÓN
+  const [currentPageSolicitudes, setCurrentPageSolicitudes] = useState(1);
+  const [currentPageStock, setCurrentPageStock] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   // Estado Formulario Solicitud
   const [showForm, setShowForm] = useState(false);
@@ -321,6 +328,23 @@ const PerifericosSection = ({ urls }) => {
           >
             <IoIosRefresh className="text-xl" />
           </button>
+          
+          <div className="flex items-center gap-2 bg-gray-700 px-3 py-1 rounded">
+            <span className="text-sm text-gray-300">Ver:</span>
+            <select 
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPageSolicitudes(1);
+                setCurrentPageStock(1);
+              }}
+              className="bg-transparent text-white text-sm focus:outline-none cursor-pointer"
+            >
+              {[10, 20, 30, 40, 50].map(n => (
+                <option key={n} value={n} className="bg-gray-800 text-white">{n}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -328,301 +352,365 @@ const PerifericosSection = ({ urls }) => {
         <div className="flex border-b border-gray-700 mb-6">
           <button
             className={`px-4 py-2 font-medium ${activeTab === 'solicitudes' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-300'}`}
-            onClick={() => setActiveTab('solicitudes')}
+            onClick={() => { setActiveTab('solicitudes'); setCurrentPageSolicitudes(1); }}
           >
             Solicitudes de Periféricos
           </button>
           <button
             className={`px-4 py-2 font-medium ${activeTab === 'stock' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-300'}`}
-            onClick={() => setActiveTab('stock')}
+            onClick={() => { setActiveTab('stock'); setCurrentPageStock(1); }}
           >
             Inventario / Stock
           </button>
         </div>
       )}
 
-      {/* ======================================= */}
-      {/* PESTAÑA DE SOLICITUDES                  */}
-      {/* ======================================= */}
-      {(!isAdmin || activeTab === "solicitudes") && (
-        <div>
-          {!showForm ? (
-            <>
-              <div className="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  <IoIosAdd className="text-xl" />
-                  <span>Cargar Solicitud</span>
-                </button>
-              </div>
+      {/* Lógica de Paginación para Solicitudes */}
+      {(() => {
+        const indexOfLastS = currentPageSolicitudes * itemsPerPage;
+        const indexOfFirstS = indexOfLastS - itemsPerPage;
+        const currentSolicitudes = solicitudes.slice(indexOfFirstS, indexOfLastS);
+        const totalPagesS = Math.ceil(solicitudes.length / itemsPerPage);
 
-              <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-900 border-b border-gray-700 text-gray-300">
-                        <th className="p-3">Fecha</th>
-                        <th className="p-3">Solicitante</th>
-                        <th className="p-3">Sucursal</th>
-                        <th className="p-3">Periférico</th>
-                        <th className="p-3">Cant.</th>
-                        <th className="p-3">Estado</th>
-                        {isAdmin && <th className="p-3 text-center">Acciones</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {solicitudes.length === 0 ? (
-                        <tr>
-                          <td colSpan={isAdmin ? 7 : 6} className="p-4 text-center text-gray-500">
-                            No hay solicitudes registradas
-                          </td>
+        return (!isAdmin || activeTab === "solicitudes") && (
+          <div>
+            {!showForm ? (
+              <>
+                <div className="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <IoIosAdd className="text-xl" />
+                    <span>Cargar Solicitud</span>
+                  </button>
+                </div>
+
+                <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-900 border-b border-gray-700 text-gray-300">
+                          <th className="p-3">Fecha</th>
+                          <th className="p-3">Solicitante</th>
+                          <th className="p-3">Sucursal</th>
+                          <th className="p-3">Periférico</th>
+                          <th className="p-3">Cant.</th>
+                          <th className="p-3">Estado</th>
+                          {isAdmin && <th className="p-3 text-center">Acciones</th>}
                         </tr>
-                      ) : (
-                        solicitudes.map(sol => (
-                          <tr key={sol.id} className="border-b border-gray-700 hover:bg-gray-750">
-                            <td className="p-3 text-sm">{new Date(sol.fecha_solicitud).toLocaleDateString()}</td>
-                            <td className="p-3">{sol.solicitante}</td>
-                            <td className="p-3">{sol.sucursal}</td>
-                            <td className="p-3">
-                              <div className="font-semibold">{sol.modelo_periferico_display}</div>
-                              <div className="text-xs text-gray-400">{sol.tipo_periferico_display}</div>
+                      </thead>
+                      <tbody>
+                        {currentSolicitudes.length === 0 ? (
+                          <tr>
+                            <td colSpan={isAdmin ? 7 : 6} className="p-4 text-center text-gray-500">
+                              No hay solicitudes registradas
                             </td>
-                            <td className="p-3">{sol.cantidad}</td>
-                            <td className="p-3">
-                              <span className={`px-2 py-1 rounded text-xs font-medium
-                                ${sol.estado === 'aprobado' ? 'bg-green-900/50 text-green-400' :
-                                  sol.estado === 'rechazado' ? 'bg-red-900/50 text-red-400' :
-                                  'bg-yellow-900/50 text-yellow-400'}`}>
-                                {sol.estado.toUpperCase()}
-                              </span>
+                          </tr>
+                        ) : (
+                          currentSolicitudes.map(sol => (
+                            <tr key={sol.id} className="border-b border-gray-700 hover:bg-gray-750">
+                              <td className="p-3 text-sm">{new Date(sol.fecha_solicitud).toLocaleDateString()}</td>
+                              <td className="p-3">{sol.solicitante}</td>
+                              <td className="p-3">{sol.sucursal}</td>
+                              <td className="p-3">
+                                <div className="font-semibold">{sol.modelo_periferico_display}</div>
+                                <div className="text-xs text-gray-400">{sol.tipo_periferico_display}</div>
+                              </td>
+                              <td className="p-3">{sol.cantidad}</td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 rounded text-xs font-medium
+                                  ${sol.estado === 'aprobado' ? 'bg-green-900/50 text-green-400' :
+                                    sol.estado === 'rechazado' ? 'bg-red-900/50 text-red-400' :
+                                    'bg-yellow-900/50 text-yellow-400'}`}>
+                                  {sol.estado.toUpperCase()}
+                                </span>
+                              </td>
+                              {isAdmin && (
+                                <td className="p-3">
+                                  <div className="flex justify-center gap-2">
+                                    {sol.estado === 'pendiente' ? (
+                                      <>
+                                        <button onClick={() => procesarSolicitud(sol.id)} className="p-1.5 bg-green-900/50 text-green-400 rounded hover:bg-green-800/50" title="Aprobar">
+                                          <IoIosCheckmarkCircle />
+                                        </button>
+                                        <button onClick={() => rechazarSolicitud(sol.id)} className="p-1.5 bg-red-900/50 text-red-400 rounded hover:bg-red-800/50" title="Rechazar">
+                                          <IoIosCloseCircle />
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button onClick={() => volverAPendiente(sol.id)} className="p-1.5 bg-blue-900/50 text-blue-400 rounded hover:bg-blue-800/50" title="Volver a Pendiente">
+                                          <IoIosRefresh />
+                                        </button>
+                                        <button onClick={() => eliminarSolicitud(sol.id)} className="p-1.5 bg-red-900/50 text-red-400 rounded hover:bg-red-800/50" title="Eliminar Solicitud">
+                                          <IoIosTrash />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Controles de Paginación Solicitudes */}
+                  {totalPagesS > 1 && (
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-t border-gray-700">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-400">
+                          Página <span className="font-medium text-white">{currentPageSolicitudes}</span> de <span className="font-medium text-white">{totalPagesS}</span>
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setCurrentPageSolicitudes(p => Math.max(1, p - 1))}
+                          disabled={currentPageSolicitudes === 1}
+                          className="p-2 rounded bg-gray-750 text-white disabled:opacity-50 hover:bg-gray-700 transition-colors"
+                        >
+                          <IoIosArrowBack />
+                        </button>
+                        <button
+                          onClick={() => setCurrentPageSolicitudes(p => Math.min(totalPagesS, p + 1))}
+                          disabled={currentPageSolicitudes === totalPagesS}
+                          className="p-2 rounded bg-gray-750 text-white disabled:opacity-50 hover:bg-gray-700 transition-colors"
+                        >
+                          <IoIosArrowForward />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="bg-gray-800 p-6 rounded-lg max-w-2xl mx-auto border border-gray-700">
+                <h3 className="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Nueva Solicitud</h3>
+                <form onSubmit={handleCreateSolicitud} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Sucursal</label>
+                    <select
+                      value={formData.sucursal}
+                      onChange={e => setFormData({ ...formData, sucursal: e.target.value })}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                      required
+                    >
+                      <option value="">Seleccione Sucursal</option>
+                      {sucursales.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Periférico</label>
+                    <select
+                      value={formData.periferico_id}
+                      onChange={e => setFormData({ ...formData, periferico_id: e.target.value })}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                      required
+                    >
+                      <option value="">Seleccione Periférico</option>
+                      {perifericos.map(p => (
+                        <option key={p.id} value={p.id}>{p.nombre} ({p.tipo}) - Stock: {p.stock}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Cantidad</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.cantidad}
+                      onChange={e => setFormData({ ...formData, cantidad: parseInt(e.target.value) })}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Cancelar</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Enviar Solicitud</button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Lógica de Paginación para Stock */}
+      {(() => {
+        const indexOfLastP = currentPageStock * itemsPerPage;
+        const indexOfFirstP = indexOfLastP - itemsPerPage;
+        const currentPerifericos = perifericos.slice(indexOfFirstP, indexOfLastP);
+        const totalPagesP = Math.ceil(perifericos.length / itemsPerPage);
+
+        return isAdmin && activeTab === "stock" && (
+          <div>
+             {!showPerifericoForm ? (
+              <>
+                <div className="mb-4">
+                  <button
+                    onClick={() => setShowPerifericoForm(true)}
+                    className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <IoIosAdd className="text-xl" />
+                    <span>Nuevo Periférico</span>
+                  </button>
+                </div>
+
+                <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-900 border-b border-gray-700 text-gray-300">
+                          <th className="p-3">Nombre / Modelo</th>
+                          <th className="p-3">Tipo</th>
+                          <th className="p-3">Sucursal Asignada</th>
+                          <th className="p-3 text-center">Stock Actual</th>
+                          <th className="p-3 text-center">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentPerifericos.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-4 text-center text-gray-500">
+                              No hay periféricos en el inventario
                             </td>
-                            {isAdmin && (
+                          </tr>
+                        ) : (
+                          currentPerifericos.map(per => (
+                            <tr key={per.id} className="border-b border-gray-700 hover:bg-gray-750">
+                              <td className="p-3 font-semibold">{per.nombre}</td>
+                              <td className="p-3">{per.tipo}</td>
+                              <td className="p-3">{per.sucursal}</td>
+                              <td className="p-3 text-center">
+                                <input 
+                                  type="number" 
+                                  className="w-20 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-center"
+                                  defaultValue={per.stock}
+                                  onBlur={(e) => updateStock(per.id, parseInt(e.target.value))}
+                                />
+                              </td>
                               <td className="p-3">
                                 <div className="flex justify-center gap-2">
-                                  {sol.estado === 'pendiente' ? (
-                                    <>
-                                      <button onClick={() => procesarSolicitud(sol.id)} className="p-1.5 bg-green-900/50 text-green-400 rounded hover:bg-green-800/50" title="Aprobar">
-                                        <IoIosCheckmarkCircle />
-                                      </button>
-                                      <button onClick={() => rechazarSolicitud(sol.id)} className="p-1.5 bg-red-900/50 text-red-400 rounded hover:bg-red-800/50" title="Rechazar">
-                                        <IoIosCloseCircle />
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <button onClick={() => volverAPendiente(sol.id)} className="p-1.5 bg-blue-900/50 text-blue-400 rounded hover:bg-blue-800/50" title="Volver a Pendiente">
-                                        <IoIosRefresh />
-                                      </button>
-                                      <button onClick={() => eliminarSolicitud(sol.id)} className="p-1.5 bg-red-900/50 text-red-400 rounded hover:bg-red-800/50" title="Eliminar Solicitud">
-                                        <IoIosTrash />
-                                      </button>
-                                    </>
-                                  )}
+                                  <button 
+                                    onClick={() => handleEditPeriferico(per)} 
+                                    className="p-1.5 text-blue-500 hover:bg-gray-700 rounded" 
+                                    title="Editar"
+                                  >
+                                    <IoIosCreate />
+                                  </button>
+                                  <button onClick={() => deletePeriferico(per.id)} className="p-1.5 text-red-500 hover:bg-gray-700 rounded" title="Eliminar">
+                                    <IoIosTrash />
+                                  </button>
                                 </div>
                               </td>
-                            )}
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="bg-gray-800 p-6 rounded-lg max-w-2xl mx-auto border border-gray-700">
-              <h3 className="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Nueva Solicitud</h3>
-              <form onSubmit={handleCreateSolicitud} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Sucursal</label>
-                  <select
-                    value={formData.sucursal}
-                    onChange={e => setFormData({ ...formData, sucursal: e.target.value })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                    required
-                  >
-                    <option value="">Seleccione Sucursal</option>
-                    {sucursales.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Periférico</label>
-                  <select
-                    value={formData.periferico_id}
-                    onChange={e => setFormData({ ...formData, periferico_id: e.target.value })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                    required
-                  >
-                    <option value="">Seleccione Periférico</option>
-                    {perifericos.map(p => (
-                      <option key={p.id} value={p.id}>{p.nombre} ({p.tipo}) - Stock: {p.stock}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Cantidad</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.cantidad}
-                    onChange={e => setFormData({ ...formData, cantidad: parseInt(e.target.value) })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                    required
-                  />
-                </div>
-                <div className="flex justify-end gap-2 pt-4">
-                  <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Cancelar</button>
-                  <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Enviar Solicitud</button>
-                </div>
-              </form>
-            </div>
-          )}
-        </div>
-      )}
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
 
-      {/* ======================================= */}
-      {/* PESTAÑA DE INVENTARIO/STOCK             */}
-      {/* ======================================= */}
-      {isAdmin && activeTab === "stock" && (
-        <div>
-           {!showPerifericoForm ? (
-            <>
-              <div className="mb-4">
-                <button
-                  onClick={() => setShowPerifericoForm(true)}
-                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  <IoIosAdd className="text-xl" />
-                  <span>Nuevo Periférico</span>
-                </button>
+                  {/* Controles de Paginación Stock */}
+                  {totalPagesP > 1 && (
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-t border-gray-700">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-400">
+                          Página <span className="font-medium text-white">{currentPageStock}</span> de <span className="font-medium text-white">{totalPagesP}</span>
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setCurrentPageStock(p => Math.max(1, p - 1))}
+                          disabled={currentPageStock === 1}
+                          className="p-2 rounded bg-gray-750 text-white disabled:opacity-50 hover:bg-gray-700 transition-colors"
+                        >
+                          <IoIosArrowBack />
+                        </button>
+                        <button
+                          onClick={() => setCurrentPageStock(p => Math.min(totalPagesP, p + 1))}
+                          disabled={currentPageStock === totalPagesP}
+                          className="p-2 rounded bg-gray-750 text-white disabled:opacity-50 hover:bg-gray-700 transition-colors"
+                        >
+                          <IoIosArrowForward />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+             ): (
+              <div className="bg-gray-800 p-6 rounded-lg max-w-2xl mx-auto border border-gray-700">
+                <h3 className="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">
+                  {editingId ? "Editar Periférico" : "Registrar Nuevo Periférico"}
+                </h3>
+                <form onSubmit={handleCreatePeriferico} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Nombre o Modelo</label>
+                    <input
+                      type="text"
+                      value={perifericoData.nombre}
+                      onChange={e => setPerifericoData({ ...perifericoData, nombre: e.target.value })}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                      placeholder="Ej. Teclado Mecánico Redragon"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Tipo de Periférico</label>
+                    <input
+                      type="text"
+                      value={perifericoData.tipo}
+                      onChange={e => setPerifericoData({ ...perifericoData, tipo: e.target.value })}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                      placeholder="Ej. Teclado, Mouse, Auricular..."
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Sucursal (Almacén Central)</label>
+                    <select
+                      value={perifericoData.sucursal}
+                      onChange={e => setPerifericoData({ ...perifericoData, sucursal: e.target.value })}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                    >
+                      {sucursales.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Stock Inicial</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={perifericoData.stock}
+                      onChange={e => setPerifericoData({ ...perifericoData, stock: parseInt(e.target.value) })}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setShowPerifericoForm(false);
+                        setEditingId(null);
+                        setPerifericoData({ nombre: "", tipo: "", stock: 0, sucursal: "CENT" });
+                      }} 
+                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                    >
+                      Cancelar
+                    </button>
+                    <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+                      {editingId ? "Actualizar Registro" : "Guardar Registro"}
+                    </button>
+                  </div>
+                </form>
               </div>
-
-              <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-900 border-b border-gray-700 text-gray-300">
-                        <th className="p-3">Nombre / Modelo</th>
-                        <th className="p-3">Tipo</th>
-                        <th className="p-3">Sucursal Asignada</th>
-                        <th className="p-3 text-center">Stock Actual</th>
-                        <th className="p-3 text-center">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {perifericos.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="p-4 text-center text-gray-500">
-                            No hay periféricos en el inventario
-                          </td>
-                        </tr>
-                      ) : (
-                        perifericos.map(per => (
-                          <tr key={per.id} className="border-b border-gray-700 hover:bg-gray-750">
-                            <td className="p-3 font-semibold">{per.nombre}</td>
-                            <td className="p-3">{per.tipo}</td>
-                            <td className="p-3">{per.sucursal}</td>
-                            <td className="p-3 text-center">
-                              <input 
-                                type="number" 
-                                className="w-20 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-center"
-                                defaultValue={per.stock}
-                                onBlur={(e) => updateStock(per.id, parseInt(e.target.value))}
-                              />
-                            </td>
-                            <td className="p-3">
-                              <div className="flex justify-center gap-2">
-                                <button 
-                                  onClick={() => handleEditPeriferico(per)} 
-                                  className="p-1.5 text-blue-500 hover:bg-gray-700 rounded" 
-                                  title="Editar"
-                                >
-                                  <IoIosCreate />
-                                </button>
-                                <button onClick={() => deletePeriferico(per.id)} className="p-1.5 text-red-500 hover:bg-gray-700 rounded" title="Eliminar">
-                                  <IoIosTrash />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-           ): (
-            <div className="bg-gray-800 p-6 rounded-lg max-w-2xl mx-auto border border-gray-700">
-              <h3 className="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">
-                {editingId ? "Editar Periférico" : "Registrar Nuevo Periférico"}
-              </h3>
-              <form onSubmit={handleCreatePeriferico} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Nombre o Modelo</label>
-                  <input
-                    type="text"
-                    value={perifericoData.nombre}
-                    onChange={e => setPerifericoData({ ...perifericoData, nombre: e.target.value })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                    placeholder="Ej. Teclado Mecánico Redragon"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Tipo de Periférico</label>
-                  <input
-                    type="text"
-                    value={perifericoData.tipo}
-                    onChange={e => setPerifericoData({ ...perifericoData, tipo: e.target.value })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                    placeholder="Ej. Teclado, Mouse, Auricular..."
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Sucursal (Almacén Central)</label>
-                  <select
-                    value={perifericoData.sucursal}
-                    onChange={e => setPerifericoData({ ...perifericoData, sucursal: e.target.value })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                  >
-                    {sucursales.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Stock Inicial</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={perifericoData.stock}
-                    onChange={e => setPerifericoData({ ...perifericoData, stock: parseInt(e.target.value) })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                  />
-                </div>
-                <div className="flex justify-end gap-2 pt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setShowPerifericoForm(false);
-                      setEditingId(null);
-                      setPerifericoData({ nombre: "", tipo: "", stock: 0, sucursal: "CENT" });
-                    }} 
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
-                    {editingId ? "Actualizar Registro" : "Guardar Registro"}
-                  </button>
-                </div>
-              </form>
-            </div>
-           )}
-        </div>
-      )}
+             )}
+          </div>
+        );
+      })()}
 
     </div>
   );
