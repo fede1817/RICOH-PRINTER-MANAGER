@@ -1,0 +1,583 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict 4WLUPmTN0UEcbf6adxZcj71hqG5xbkYtIyexGg1aUX6na7ImjiVyNK0EwcKtkYt
+
+-- Dumped from database version 17.9
+-- Dumped by pg_dump version 17.9
+
+-- Started on 2026-04-16 10:55:32
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 217 (class 1259 OID 24577)
+-- Name: impresoras; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.impresoras (
+    id integer NOT NULL,
+    ip character varying(50) NOT NULL,
+    sucursal character varying(100),
+    modelo character varying(100),
+    drivers_url text,
+    tipo character varying(50),
+    fecha_ultimo_cambio timestamp without time zone,
+    cambios_toner integer DEFAULT 0,
+    toner_reserva integer DEFAULT 0,
+    toner_anterior integer DEFAULT 0,
+    numero_serie text,
+    contador_paginas integer,
+    direccion text,
+    telefono text,
+    correo text,
+    ultimo_pedido_contador integer,
+    ultimo_pedido_fecha timestamp without time zone,
+    ultima_alerta timestamp without time zone,
+    estado character varying(20) DEFAULT 'verificando'::character varying,
+    ultima_verificacion timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.impresoras OWNER TO postgres;
+
+--
+-- TOC entry 218 (class 1259 OID 24587)
+-- Name: impresoras_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.impresoras_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.impresoras_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 4857 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: impresoras_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.impresoras_id_seq OWNED BY public.impresoras.id;
+
+
+--
+-- TOC entry 219 (class 1259 OID 24588)
+-- Name: pedidos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.pedidos (
+    id integer NOT NULL,
+    solicitante character varying(255) NOT NULL,
+    sucursal character varying(100) NOT NULL,
+    modelo_impresora character varying(255) NOT NULL,
+    tipo_toner character varying(50) NOT NULL,
+    cantidad integer NOT NULL,
+    fecha_pedido timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    estado character varying(20) DEFAULT 'pendiente'::character varying,
+    CONSTRAINT pedidos_estado_check CHECK (((estado)::text = ANY (ARRAY[('pendiente'::character varying)::text, ('aprobado'::character varying)::text, ('rechazado'::character varying)::text])))
+);
+
+
+ALTER TABLE public.pedidos OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 24596)
+-- Name: pedidos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.pedidos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.pedidos_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 4858 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: pedidos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.pedidos_id_seq OWNED BY public.pedidos.id;
+
+
+--
+-- TOC entry 224 (class 1259 OID 24642)
+-- Name: perifericos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.perifericos (
+    id integer NOT NULL,
+    nombre character varying(100) NOT NULL,
+    tipo character varying(50) NOT NULL,
+    stock integer DEFAULT 0 NOT NULL,
+    sucursal character varying(50) NOT NULL,
+    fecha_registro timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.perifericos OWNER TO postgres;
+
+--
+-- TOC entry 223 (class 1259 OID 24641)
+-- Name: perifericos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.perifericos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.perifericos_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 4859 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: perifericos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.perifericos_id_seq OWNED BY public.perifericos.id;
+
+
+--
+-- TOC entry 226 (class 1259 OID 24651)
+-- Name: perifericos_solicitudes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.perifericos_solicitudes (
+    id integer NOT NULL,
+    periferico_id integer,
+    modelo_periferico character varying(100),
+    tipo_periferico character varying(50),
+    solicitante character varying(100) NOT NULL,
+    sucursal character varying(50) NOT NULL,
+    cantidad integer NOT NULL,
+    estado character varying(20) DEFAULT 'pendiente'::character varying,
+    fecha_solicitud timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_procesado timestamp without time zone
+);
+
+
+ALTER TABLE public.perifericos_solicitudes OWNER TO postgres;
+
+--
+-- TOC entry 225 (class 1259 OID 24650)
+-- Name: perifericos_solicitudes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.perifericos_solicitudes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.perifericos_solicitudes_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 4860 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: perifericos_solicitudes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.perifericos_solicitudes_id_seq OWNED BY public.perifericos_solicitudes.id;
+
+
+--
+-- TOC entry 221 (class 1259 OID 24597)
+-- Name: servidores; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.servidores (
+    id integer NOT NULL,
+    ip character varying(15) NOT NULL,
+    sucursal character varying(100) NOT NULL,
+    nombre character varying(100),
+    tipo character varying(50) DEFAULT 'servidor'::character varying,
+    estado character varying(20) DEFAULT 'inactivo'::character varying,
+    latencia character varying(20) DEFAULT '0ms'::character varying,
+    ultima_verificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.servidores OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 24606)
+-- Name: servidores_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.servidores_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.servidores_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 4861 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: servidores_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.servidores_id_seq OWNED BY public.servidores.id;
+
+
+--
+-- TOC entry 4661 (class 2604 OID 24607)
+-- Name: impresoras id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.impresoras ALTER COLUMN id SET DEFAULT nextval('public.impresoras_id_seq'::regclass);
+
+
+--
+-- TOC entry 4667 (class 2604 OID 24608)
+-- Name: pedidos id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pedidos ALTER COLUMN id SET DEFAULT nextval('public.pedidos_id_seq'::regclass);
+
+
+--
+-- TOC entry 4677 (class 2604 OID 24645)
+-- Name: perifericos id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.perifericos ALTER COLUMN id SET DEFAULT nextval('public.perifericos_id_seq'::regclass);
+
+
+--
+-- TOC entry 4680 (class 2604 OID 24654)
+-- Name: perifericos_solicitudes id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.perifericos_solicitudes ALTER COLUMN id SET DEFAULT nextval('public.perifericos_solicitudes_id_seq'::regclass);
+
+
+--
+-- TOC entry 4670 (class 2604 OID 24609)
+-- Name: servidores id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.servidores ALTER COLUMN id SET DEFAULT nextval('public.servidores_id_seq'::regclass);
+
+
+--
+-- TOC entry 4842 (class 0 OID 24577)
+-- Dependencies: 217
+-- Data for Name: impresoras; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.impresoras (id, ip, sucursal, modelo, drivers_url, tipo, fecha_ultimo_cambio, cambios_toner, toner_reserva, toner_anterior, numero_serie, contador_paginas, direccion, telefono, correo, ultimo_pedido_contador, ultimo_pedido_fecha, ultima_alerta, estado, ultima_verificacion) FROM stdin;
+63	192.168.5.21	Pedro Juan Caballero	RICOH P 800	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	principal	2026-03-30 20:54:20.863421	9	0	70	5301XC46579	414777	 Avda. Padre Jose O´connor c/ Avda. Gaspar Rodríguez de Francia	\N	\N	\N	2026-03-27 13:17:40.098695	2026-03-28 16:25:03.316767	conectada	2026-04-16 10:54:52.993228
+7	192.168.8.20	Asuncion-color	P C600	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343154/V3200/z04340L16.exe	comercial	2025-09-09 16:15:35.071515	2	1	70	5321X720063	27887	Madame Lynch N° 856 esq. Santa Cruz	\N	\N	\N	2025-07-18 11:32:36.087769	\N	conectada	2026-04-16 10:54:53.000731
+9	192.168.46.21	Misiones	RICOH P 800	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	principal	2026-03-10 17:04:55.808869	5	1	40	5302XA59354	232821	Gral. Diaz Ruta IV loteamiento Felders San Ignacio Misiones	\N	\N	\N	2026-03-06 08:27:13.476407	2026-03-04 17:02:58.964442	conectada	2026-04-16 10:54:53.012106
+31	192.168.7.21	Santani 	RICOH P 800	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	principal	2026-02-17 11:16:43.533993	6	1	100	5301XC46541	346786	 RUTA ACCESO A SANTANI - 200 METROS DE LA ROTONDA	\N	\N	\N	2026-02-17 08:28:56.481688	2026-02-14 09:11:19.838128	conectada	2026-04-16 10:54:53.031174
+13	192.168.4.22	Caaguazu	P 501/502	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343272/V3100/z03653L16.exe	backup	2025-09-19 18:01:20.208966	3	1	40	5382P380086	32611	RUTA 7 GASPAR R DE FRANCIA KM 180 - CAAGUAZU	\N	\N	\N	2026-03-27 13:21:05.208123	2025-09-09 16:15:35.03084	conectada	2026-04-16 10:54:53.045386
+14	192.168.3.22	Ciudad del Este	RICOH P 800	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	backup	2026-04-13 11:26:23.087433	3	0	100	5302X453119	93530	Los Rosales esquina Padre Guillermo Bauman - CIUDAD DEL ESTE	\N	\N	\N	2026-03-04 16:18:26.628329	\N	conectada	2026-04-16 10:54:53.060881
+96	192.168.4.171	Caaguazu	HP LaserJet M203dw	https://support.hp.com/bo-es/drivers/hp-laserjet-pro-m203-printer-series/9365762	comercial	2026-03-11 15:27:05.485859	5	0	56	BRBSKCDK34	65900	Dirección no especificada	\N	\N	\N	2026-03-07 10:21:54.468208	2026-03-03 06:33:40.238801	conectada	2026-04-16 10:54:54.079131
+8	192.168.8.41	Asuncion-RRHH	P 501/502	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343272/V3100/z03653L16.exe	comercial	2025-09-22 14:37:36.487585	3	0	40	5385P402488	9186	Madame Lynch N° 856 esq. Santa Cruz	\N	\N	\N	2025-07-18 11:32:36.071002	2025-09-19 18:01:21.790712	conectada	2026-04-16 10:54:54.084729
+66	192.168.48.8	Concepcion	HP M201dw	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	comercial	2026-03-04 07:41:40.502123	6	0	65	BRBSH2JD55	108081	Ruta Py05 Gral B. Caballero E/ Mcal. Francisco S. Lopez Y Mr L. Aponte	\N	\N	\N	2026-03-07 09:59:10.292483	2026-02-04 15:17:35.364667	conectada	2026-04-16 10:54:54.100652
+10	192.168.48.121	Concepcion	RICOH P 800	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	principal	2026-03-23 19:12:04.542088	7	3	80	5304X375774	239239	Mcal. Francisco Lopez, Gral Bernardino Caballero	\N	\N	\N	2025-07-18 11:34:51.200761	2026-03-23 17:08:49.427709	conectada	2026-04-16 10:54:54.119248
+6	192.168.8.23	Asunción	IM 430	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343273/V3100/z03655L16.exe	comercial	2026-02-06 07:11:42.165576	4	0	50	3354P450006	77809	Madame Lynch N° 856 esq. Santa Cruz	\N	\N	\N	2026-02-12 15:32:04.347716	2026-02-02 08:52:21.733541	conectada	2026-04-16 10:54:54.125494
+64	192.168.4.21	Caaguazu	RICOH P 800	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	principal	2026-04-15 12:17:14.535272	12	1	100	5301XC46584	603953	RUTA 7 GASPAR R DE FRANCIA KM 180 - CAAGUAZU	\N	\N	\N	2026-04-13 14:06:36.299342	2026-04-13 14:05:30.453303	conectada	2026-04-16 10:54:54.141695
+98	192.168.3.21	Ciudad del Este	RICOH P 800	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	principal	2026-03-25 12:06:18.245422	11	1	30	5302X453123	499382	Los Rosales esquina Padre Guillermo Bauman - CIUDAD DEL ESTE	\N	\N	\N	2026-03-27 13:17:50.523885	2026-03-24 11:03:07.209664	conectada	2026-04-16 10:54:55.181889
+65	192.168.5.8	Pedro Juan Caballero	HP MFP M127fn	https://support.hp.com/py-es/drivers/hp-laserjet-pro-mfp-m127fn/model/5303415	comercial	\N	0	3	0	\N	\N	Avda. Padre Jose O´connor c/ Avda. G. Rodríguez de Francia	\N	\N	\N	2026-02-11 09:41:19.058205	\N	desconectada	2026-04-16 10:54:55.21035
+5	192.168.2.21	Encarnacion	SP 8400DN	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343271/V3100/z03651L16.exe	principal	2026-03-31 13:25:36.322139	4	1	80	Y871RA10103	458387	RUTA 1 KM 6 1.5 CERCA DE LA ENTRADA BARRIO ITA P - ENCARNACION	\N	\N	\N	2026-03-27 13:17:27.046291	2026-03-30 14:09:23.747434	conectada	2026-04-16 10:54:55.227532
+15	192.168.2.22	Encarnacion	P 501/502	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343272/V3100/z03653L16.exe	backup	2026-01-13 14:19:40.047452	1	0	50	5382P380183	18801	RUTA 1 KM 6 1.5 CERCA DE LA ENTRADA BARRIO ITA P - ENCARNACION	\N	\N	\N	\N	\N	conectada	2026-04-16 10:54:55.243268
+99	192.168.2.157	Encarnacion	HP LaserJet P2055dn	https://support.hp.com/py-es/drivers/hp-laserjet-2055-printer-series/model/3662058	comercial	\N	0	0	-2	CNC1C18050	143637	Direcc	\N	\N	\N	2026-02-13 14:10:58.253256	\N	conectada	2026-04-16 10:54:55.273778
+12	192.168.5.22	Pedro Juan Caballero	P 501/502	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343272/V3100/z03653L16.exe	backup	2026-03-07 09:56:14.166197	3	0	70	5382P380089	37347	 Avda. Padre Jose O´connor c/ Avda. Gaspar Rodríguez de Francia	\N	\N	\N	2026-02-13 09:57:07.066778	2026-03-02 11:02:28.761149	conectada	2026-04-16 10:54:46.913096
+11	192.168.7.22	Santani	P 501/502	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343272/V3100/z03653L16.exe	backup	2026-03-13 14:44:20.388513	5	2	20	5382P380185	56176	RUTA ACCESO A SANTANI - 200 METROS DE LA ROTONDA	\N	\N	\N	2026-04-11 11:20:17.520137	2026-04-11 11:15:57.211399	conectada	2026-04-16 10:54:46.935849
+16	192.168.46.22	Misiones	RICOH P 800	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	backup	2025-12-04 09:14:02.896731	2	0	30	5302XA59278	32077	4WCV+79W, San Ignacio 080316	\N	\N	\N	2025-10-10 14:12:14.914572	2025-11-28 10:03:52.830583	desconectada	2026-04-16 10:54:52.959254
+17	192.168.48.122	Concepcion	RICOH P 800	https://support.ricoh.com/bb/pub_e/dr_ut_e/0001343/0001343146/V3200/z04344L17.exe	backup	2025-09-09 16:15:33.623444	3	0	90	5304X375768	34971	Mcal. Francisco Lopez, Gral Bernardino Caballero	\N	\N	\N	\N	\N	conectada	2026-04-16 10:54:52.978503
+\.
+
+
+--
+-- TOC entry 4844 (class 0 OID 24588)
+-- Dependencies: 219
+-- Data for Name: pedidos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.pedidos (id, solicitante, sucursal, modelo_impresora, tipo_toner, cantidad, fecha_pedido, estado) FROM stdin;
+32	Federico Britez	CENT	HP LaserJet M111a	Blanco y negro	1	2025-11-21 17:12:21.803778	aprobado
+30	Veronica Acuña 	ENC	HP LaserJet M111w	Blanco y negro	4	2025-11-20 17:05:32.983242	aprobado
+29	Veronica Acuña 	ENC	HP LaserJet Pro MFP M201	Blanco y negro	4	2025-11-20 17:04:32.85418	aprobado
+27	ESTHER MNIÑO	CDE	HP LaserJet P1102w	Blanco y negro	1	2025-11-20 08:07:28.718762	aprobado
+26	ESTHER MNIÑO	CDE	HP LaserJet Pro MFP M135w	Blanco y negro	1	2025-11-20 08:07:02.384208	aprobado
+67	EDID FERNANDEZ 	CONC	HP DeskJet 2775	Blanco y negro	6	2026-01-14 17:18:20.878629	aprobado
+66	Albercio Diaz	PJC	HP LaserJet Pro M127FN	Blanco y negro	2	2025-12-29 11:12:38.826128	aprobado
+65	Karen Ramirez	SANT	HP LaserJet Pro M107w	Blanco y negro	2	2025-12-29 10:23:25.748138	aprobado
+64	EDID FERNANDEZ	CONC	HP LaserJet Pro M107w	Blanco y negro	1	2025-12-22 11:29:46.961728	aprobado
+63	EDID FERNANDEZ	CONC	HP LaserJet Pro M201dw	Blanco y negro	1	2025-12-22 11:29:08.743491	aprobado
+62	Edid Fernandez	CONC	HP DeskJet 2775	Blanco y negro	2	2025-12-22 11:28:29.713736	aprobado
+60	ESTHER MNIÑO	CDE	HP LaserJet Pro MFP M135w	Blanco y negro	2	2025-12-19 17:10:37.840524	aprobado
+77	Araceli Villalba	CAAG	HP LaserJet Pro M203	Blanco y negro	2	2026-01-16 11:27:14.441718	aprobado
+74	MARLENE FRANCO SOTO	MIS	HP DeskJet 2775	Blanco y negro	1	2026-01-16 10:40:46.984384	aprobado
+72	MARLENE FRANCO SOTO 	MIS	HP LaserJet Pro M203dw	Blanco y negro	1	2026-01-15 14:14:17.659696	aprobado
+71	MARLENE FRANCO SOTO	MIS	HP LaserJet P1102w	Blanco y negro	1	2026-01-15 14:10:11.096074	aprobado
+70	KAREN RAMIREZ	SANT	HP LaserJet Pro M107w	Blanco y negro	1	2026-01-15 11:34:26.643134	aprobado
+69	KAREN LORENA RAMIREZ SOSA	SANT	HP Deskjet Ink Advantage 2874	Color	2	2026-01-15 11:33:55.941813	aprobado
+68	KAREN LORENA RAMIREZ SOSA	SANT	HP Deskjet Ink Advantage 2874	Blanco y negro	3	2026-01-15 11:33:17.638405	aprobado
+79	ESTHER MIÑO	CDE	HP LaserJet P1102w	Blanco y negro	1	2026-01-22 08:54:57.708378	aprobado
+78	ESTHER MIÑO	CDE	HP LaserJet Pro MFP M135w	Blanco y negro	2	2026-01-22 08:53:18.87902	aprobado
+80	Federico Britez	CENT	HP LaserJet M111a	Blanco y negro	2	2026-02-04 08:02:07.913188	aprobado
+120	DARIO OCAMPOS	Pedro Juan Caballero	P 501/502	Blanco y negro	1	2026-02-13 09:57:07.021359	aprobado
+128	DARIO OCAMPOS	Caaguazu	RICOH P 800	Blanco y negro	1	2026-02-26 07:56:17.345371	aprobado
+129	DARIO OCAMPOS	Encarnacion	SP 8400DN	Blanco y negro	1	2026-02-26 07:57:16.128342	aprobado
+119	VERONICA ACUÑA	ENC	HP LaserJet Pro MFP M201	Blanco y negro	4	2026-02-13 09:21:33.798589	aprobado
+90	ARACELI VILLALBA	CAAG	HP LaserJet Pro M203	Blanco y negro	1	2026-02-12 10:41:53.540207	aprobado
+89	EDID FERNANDEZ	CONC	HP LaserJet Pro M107w	Blanco y negro	1	2026-02-12 07:49:19.915977	aprobado
+88	EDID FERNANDEZ	CONC	HP LaserJet Pro M201dw	Blanco y negro	1	2026-02-12 07:48:49.959379	aprobado
+87	EDID FERNANDEZ	CONC	HP DeskJet 2775	Blanco y negro	4	2026-02-12 07:48:20.471909	aprobado
+86	Karen Ramirez	SANT	HP LaserJet Pro M107w	Blanco y negro	2	2026-02-11 09:45:03.25261	aprobado
+84	Karen Ramirez	SANT	HP Deskjet Ink Advantage 2874	Color	1	2026-02-11 09:44:04.708876	aprobado
+83	Karen Ramirez	SANT	HP Deskjet Ink Advantage 2874	Blanco y negro	2	2026-02-11 09:43:43.280685	aprobado
+82	ESTHER MNIÑO	CDE	HP LaserJet P1102w	Blanco y negro	1	2026-02-10 09:15:51.608129	aprobado
+81	ESTHER MNIÑO	CDE	HP LaserJet Pro MFP M135w	Blanco y negro	2	2026-02-10 09:15:20.13223	aprobado
+123	FEDERICO BRITEZ	Santani 	RICOHP P800	Blanco y negro	1	2026-02-14 09:09:58.91563	aprobado
+125	DARIO OCAMPOS	Santani 	RICOHP P800	Blanco y negro	1	2026-02-17 08:28:56.42253	aprobado
+126	DARIO OCAMPOS	Pedro Juan Caballero	RICOH P 800	Blanco y negro	1	2026-02-23 08:35:01.388344	aprobado
+127	FEDERICO BRITEZ	Encarnacion	SP 8400DN	Blanco y negro	1	2026-02-25 09:32:09.283959	aprobado
+131	DARIO OCAMPOS	Ciudad del Este	RICOH P 800	Blanco y negro	1	2026-03-04 16:19:11.438217	aprobado
+130	DARIO OCAMPOS	Ciudad del Este	RICOH P 800	Blanco y negro	1	2026-03-04 16:18:26.55858	aprobado
+132	DARIO OCAMPOS	Misiones	RICOH P 800	Blanco y negro	1	2026-03-06 08:27:13.436458	aprobado
+147	FEDERICO BRITEZ	Santani	P 501/502	Blanco y negro	1	2026-03-16 11:04:57.860681	aprobado
+146	VERONICA ACUÑA	ENC	HP LaserJet Pro M107w	Blanco y negro	2	2026-03-12 09:20:42.454379	aprobado
+145	ESTHER MIÑO	CDE	HP LaserJet P1102w	Blanco y negro	1	2026-03-12 08:13:31.137452	aprobado
+144	EDID FERNANDEZ	CONC	HP LaserJet Pro M107w	Blanco y negro	2	2026-03-12 08:10:59.692668	aprobado
+143	ESTHER MIÑO	CDE	HP LaserJet Pro MFP M135w	Blanco y negro	1	2026-03-12 08:10:57.684368	aprobado
+142	EDID FERNANDEZ	CONC	HP LaserJet Pro M201dw	Blanco y negro	2	2026-03-12 08:10:45.883472	aprobado
+141	EDID FERNANDEZ	CONC	HP DeskJet 2775	Blanco y negro	4	2026-03-12 08:10:30.596022	aprobado
+140	EDID FERNANDEZ	CONC	HP DeskJet 2775	Color	4	2026-03-12 08:10:15.173186	aprobado
+139	ARACELI VILLALBA	CAAG	HP LaserJet Pro M203	Blanco y negro	1	2026-03-11 14:55:19.895371	aprobado
+138	KAREN RAMIREZ	SANT	HP Deskjet Ink Advantage 2874	Color	1	2026-03-11 08:48:08.477069	aprobado
+137	KAREN RAMIREZ	SANT	HP Deskjet Ink Advantage 2874	Blanco y negro	2	2026-03-11 08:47:51.371417	aprobado
+136	KAREN RAMIREZ	SANT	HP LaserJet Pro M107w	Blanco y negro	2	2026-03-11 08:47:16.507961	aprobado
+152	DARIO OCAMPOS	Caaguazu	P 501/502	Blanco y negro	1	2026-03-27 13:21:05.178149	aprobado
+151	DARIO OCAMPOS	Caaguazu	RICOH P 800	Blanco y negro	1	2026-03-27 13:18:03.336805	aprobado
+150	DARIO OCAMPOS	Ciudad del Este	RICOH P 800	Blanco y negro	1	2026-03-27 13:17:50.500292	aprobado
+149	DARIO OCAMPOS	Pedro Juan Caballero	RICOH P 800	Blanco y negro	1	2026-03-27 13:17:40.074807	aprobado
+148	DARIO OCAMPOS	Encarnacion	SP 8400DN	Blanco y negro	1	2026-03-27 13:17:26.997367	aprobado
+154	MARLENE FRANCO	MIS	HP LaserJet P1102w	Blanco y negro	1	2026-04-10 12:29:46.896023	pendiente
+155	MARLENE FRANCO	MIS	HP LaserJet Pro M203dw	Blanco y negro	1	2026-04-10 12:30:04.369126	pendiente
+157	ALBERCIO DIAZ	PJC	HP DESKJET 2700	Color	1	2026-04-13 10:42:49.587134	pendiente
+158	ALBERCIO DIAZ	PJC	HP DESKJET 2700	Blanco y negro	1	2026-04-13 10:43:10.130507	pendiente
+153	MARLENE FRANCO	MIS	HP LaserJet Pro M102w	Blanco y negro	1	2026-04-10 12:28:34.470696	pendiente
+159	ALBERCIO DIAZ	PJC	HP LaserJet Pro M127FN	Blanco y negro	1	2026-04-13 10:43:29.693131	pendiente
+156	FEDERICO BRITEZ	Santani	P 501/502	Blanco y negro	1	2026-04-11 11:20:17.491272	aprobado
+160	FEDERICO BRITEZ	Caaguazu	RICOH P 800	Blanco y negro	1	2026-04-13 14:06:36.032158	aprobado
+161	KAREN RAMIREZ	SANT	HP LaserJet Pro M107w	Blanco y negro	3	2026-04-13 17:57:32.632391	pendiente
+162	KAREN RAMIREZ	SANT	HP Deskjet Ink Advantage 2874	Color	1	2026-04-13 17:58:00.070331	pendiente
+163	KAREN RAMIREZ	SANT	HP Deskjet Ink Advantage 2874	Blanco y negro	2	2026-04-13 17:58:11.754621	pendiente
+164	ARACELI VILLALBA	CAAG	HP LaserJet Pro M203	Blanco y negro	1	2026-04-14 12:08:07.353827	pendiente
+165	EDID FERNANDEZ	CONC	HP DeskJet 2775	Color	2	2026-04-14 12:40:29.294742	pendiente
+166	EDID FERNANDEZ	CONC	HP DeskJet 2775	Blanco y negro	2	2026-04-14 12:40:45.779063	pendiente
+167	ESTHER MIÑO	CDE	HP LaserJet Pro MFP M135w	Blanco y negro	1	2026-04-15 12:17:19.44345	pendiente
+\.
+
+
+--
+-- TOC entry 4849 (class 0 OID 24642)
+-- Dependencies: 224
+-- Data for Name: perifericos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.perifericos (id, nombre, tipo, stock, sucursal, fecha_registro) FROM stdin;
+6	HP GENERICO	CARGADOR	10	CENT	2026-04-16 10:53:10.133905
+4	SATE A-R05	ZAPATILLA	10	CENT	2026-04-16 10:51:41.720772
+7	LOGITECH	MOUSE CON CABLE	10	CENT	2026-04-16 10:54:32.300909
+\.
+
+
+--
+-- TOC entry 4851 (class 0 OID 24651)
+-- Dependencies: 226
+-- Data for Name: perifericos_solicitudes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.perifericos_solicitudes (id, periferico_id, modelo_periferico, tipo_periferico, solicitante, sucursal, cantidad, estado, fecha_solicitud, fecha_procesado) FROM stdin;
+\.
+
+
+--
+-- TOC entry 4846 (class 0 OID 24597)
+-- Dependencies: 221
+-- Data for Name: servidores; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.servidores (id, ip, sucursal, nombre, tipo, estado, latencia, ultima_verificacion, created_at, updated_at) FROM stdin;
+6	192.168.2.1	ENCARNACION	ENCARNACION	router	activo	11ms	2026-04-16 10:54:46.939922	2025-09-25 15:19:00.073	2025-11-25 11:47:15.173821
+17	192.168.5.100	PJC	NVR PJC	NVR	activo	18ms	2026-04-16 10:54:46.979913	2025-11-21 08:13:30.502845	2025-11-21 08:13:30.502845
+4	192.168.8.1	ASUNCION	ASUNCION	router	activo	2ms	2026-04-16 10:54:47.006332	2025-09-25 15:04:40.509524	2026-02-11 09:39:08.227907
+5	192.168.3.1	CDE	CDE	router	activo	11ms	2026-04-16 10:54:47.039545	2025-09-25 15:17:52.43676	2025-11-24 17:13:28.375718
+7	192.168.4.1	CAAGUAZU	CAAGUAZU	router	activo	10ms	2026-04-16 10:54:47.072103	2025-09-25 15:20:10.229709	2025-11-24 17:13:38.266638
+8	192.168.5.1	PJC	PJC	router	activo	17ms	2026-04-16 10:54:47.110856	2025-09-25 15:21:08.199201	2025-11-24 17:13:42.649916
+9	192.168.7.1	SANTANI	SANTANI	router	activo	18ms	2026-04-16 10:54:47.153568	2025-09-25 15:22:09.650318	2025-11-24 17:50:53.015609
+19	192.168.4.100	CAAGUAZU	NVR CAAG	NVR	activo	11ms	2026-04-16 10:54:47.189505	2025-11-21 09:47:33.38662	2025-11-21 09:47:33.38662
+16	192.168.48.100	CONCEPCION	NVR CONCEPCION	NVR	activo	14ms	2026-04-16 10:54:47.225489	2025-11-21 08:12:32.357241	2025-11-21 08:12:32.357241
+14	192.168.48.1	CONCEPCION	CONCEPCION	Router	activo	12ms	2026-04-16 10:54:47.260974	2025-09-30 17:26:27.149373	2025-09-30 17:26:27.149373
+23	192.168.8.150	ASUNCION	NVR ASUNCION	NVR	activo	4ms	2026-04-16 10:54:47.288143	2025-11-21 09:49:45.307494	2025-11-21 09:49:45.307494
+13	192.168.46.1	MISIONES	MISIONES	Router	activo	6ms	2026-04-16 10:54:47.317842	2025-09-30 17:25:04.688695	2025-09-30 17:25:04.688695
+15	192.168.8.123	NUC	NUC	NUC	activo	2ms	2026-04-16 10:54:47.342315	2025-11-14 07:41:05.184001	2025-11-24 17:14:39.881006
+21	192.168.46.100	MISIONES	DVR MISIONES	DVR	activo	8ms	2026-04-16 10:54:47.373469	2025-11-21 09:48:29.503241	2025-11-21 09:48:29.503241
+18	192.168.7.100	SANTANI	DVR SANTANI	DVR	activo	8ms	2026-04-16 10:54:47.404024	2025-11-21 08:14:28.247234	2025-12-30 07:40:19.51421
+22	192.168.2.100	ENCARNACION	CAM ENC	CAM	activo	10ms	2026-04-16 10:54:47.435999	2025-11-21 09:49:03.885741	2025-11-21 09:49:03.885741
+20	192.168.3.100	CDE	CAM CDE	CAM	activo	11ms	2026-04-16 10:54:47.470735	2025-11-21 09:48:07.385791	2025-11-21 09:48:07.385791
+\.
+
+
+--
+-- TOC entry 4862 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: impresoras_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.impresoras_id_seq', 102, true);
+
+
+--
+-- TOC entry 4863 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: pedidos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.pedidos_id_seq', 167, true);
+
+
+--
+-- TOC entry 4864 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: perifericos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.perifericos_id_seq', 7, true);
+
+
+--
+-- TOC entry 4865 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: perifericos_solicitudes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.perifericos_solicitudes_id_seq', 4, true);
+
+
+--
+-- TOC entry 4866 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: servidores_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.servidores_id_seq', 27, true);
+
+
+--
+-- TOC entry 4685 (class 2606 OID 24611)
+-- Name: impresoras impresoras_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.impresoras
+    ADD CONSTRAINT impresoras_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4687 (class 2606 OID 24613)
+-- Name: pedidos pedidos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pedidos
+    ADD CONSTRAINT pedidos_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4693 (class 2606 OID 24649)
+-- Name: perifericos perifericos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.perifericos
+    ADD CONSTRAINT perifericos_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4695 (class 2606 OID 24658)
+-- Name: perifericos_solicitudes perifericos_solicitudes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.perifericos_solicitudes
+    ADD CONSTRAINT perifericos_solicitudes_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4689 (class 2606 OID 24615)
+-- Name: servidores servidores_ip_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.servidores
+    ADD CONSTRAINT servidores_ip_key UNIQUE (ip);
+
+
+--
+-- TOC entry 4691 (class 2606 OID 24617)
+-- Name: servidores servidores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.servidores
+    ADD CONSTRAINT servidores_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4696 (class 2606 OID 24659)
+-- Name: perifericos_solicitudes perifericos_solicitudes_periferico_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.perifericos_solicitudes
+    ADD CONSTRAINT perifericos_solicitudes_periferico_id_fkey FOREIGN KEY (periferico_id) REFERENCES public.perifericos(id) ON DELETE SET NULL;
+
+
+-- Completed on 2026-04-16 10:55:32
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict 4WLUPmTN0UEcbf6adxZcj71hqG5xbkYtIyexGg1aUX6na7ImjiVyNK0EwcKtkYt
+
